@@ -359,7 +359,7 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--accent3); box-sh
       <div class="stat-value" id="headerSpin">1.00×</div>
     </div>
     <div class="pro-badge" id="proBadge">PRO</div>
-    <button class="upgrade-btn" id="upgradeBtn" onclick="showUpgradeModal()">⬡ Upgrade to Pro — $10</button>
+    <button class="upgrade-btn" id="upgradeBtn" onclick="showUpgradeModal()">🛰 Unlock Satellite — $10</button>
   </div>
 </header>
 
@@ -444,7 +444,7 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--accent3); box-sh
       </div>
       <div class="pro-lock-overlay" id="proLockOverlay" onclick="showUpgradeModal()">
         <div class="lock-icon">🔒</div>
-        <div class="lock-text">PRO FEATURE<br>Satellite + HD Terrain<br>Unlock for $10</div>
+        <div class="lock-text">PRO FEATURE<br>Satellite Imagery<br>Unlock for $10</div>
       </div>
     </div>
 
@@ -738,7 +738,8 @@ function resizeCanvas(){
 }
 
 function drawMap(){
-  if(!imageData||satelliteActive)return;
+  if(mapboxMap){ updateFloodOverlay(); return; }
+  if(!imageData)return;
   const cw=canvas.width,ch=canvas.height;
   const data=imageData.data;
   const sl=animCurrent;
@@ -811,21 +812,23 @@ function drawGravCircle(){
   ctx.fillStyle='rgba(255,107,53,.9)';ctx.fill();
 }
 
-// ─── Mapbox Pro Mode ──────────────────────────────────────────────────────────
-function initMapbox(){
-  if(mapboxMap)return;
+// ─── Mapbox (Standard free, Satellite pro) ───────────────────────────────────
+function initMapbox(style){
   mapboxgl.accessToken=MAPBOX_TOKEN;
+  if(mapboxMap){
+    mapboxMap.setStyle(style);
+    mapboxMap.once('styledata',()=>addFloodLayer());
+    return;
+  }
   mapboxMap=new mapboxgl.Map({
     container:'map',
-    style:'mapbox://styles/mapbox/satellite-v9',
+    style: style,
     center:[0,20],
     zoom:2,
     projection:'mercator'
   });
   mapboxMap.addControl(new mapboxgl.NavigationControl(),'top-right');
-  mapboxMap.on('load',()=>{
-    addFloodLayer();
-  });
+  mapboxMap.on('load',()=>{ addFloodLayer(); });
 }
 
 function addFloodLayer(){
@@ -875,18 +878,12 @@ function toggleSatellite(){
   if(!isPro){showUpgradeModal();return;}
   satelliteActive=!satelliteActive;
   document.getElementById('toggleSatellite').classList.toggle('on',satelliteActive);
-
   if(satelliteActive){
-    document.getElementById('mapCanvas').style.display='none';
-    document.getElementById('mapboxContainer').classList.add('visible');
-    document.getElementById('seaLevelOverlay').style.display='block';
-    initMapbox();
+    initMapbox('mapbox://styles/mapbox/satellite-v9');
     document.getElementById('modelLabel').textContent='MAPBOX SATELLITE';
   } else {
-    document.getElementById('mapCanvas').style.display='block';
-    document.getElementById('mapboxContainer').classList.remove('visible');
-    drawMap();
-    document.getElementById('modelLabel').textContent='PROCEDURAL';
+    initMapbox('mapbox://styles/mapbox/standard');
+    document.getElementById('modelLabel').textContent='MAPBOX STANDARD';
   }
 }
 
@@ -1014,6 +1011,13 @@ animCurrent=0;
 updateMap();
 checkProStatus();
 handleStripeReturn();
+
+// Free tier: Mapbox Standard (real Earth) — satellite is Pro only
+document.getElementById('mapCanvas').style.display='none';
+document.getElementById('mapboxContainer').classList.add('visible');
+initMapbox('mapbox://styles/mapbox/standard');
+document.getElementById('modelLabel').textContent='MAPBOX STANDARD';
+
 setTimeout(()=>{ document.getElementById('crosshairInfo').textContent='NOMINAL — PRESENT DAY CONDITIONS'; },1500);
 </script>
 </body>
