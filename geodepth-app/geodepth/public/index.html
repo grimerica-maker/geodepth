@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>GeoDepth — Sea Level Simulator</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-<script src='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js'></script>
-<link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet' />
+
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet" />
+
 <style>
 :root {
   --bg: #030d12; --panel: #060f16; --b1: #0a2a35; --b2: #0d3a4a;
@@ -14,45 +16,92 @@
   --text: #b8d4dc; --dim: #2a5a6a; --gold: #ffd700;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Share Tech Mono',monospace; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+body {
+  font-family:'Share Tech Mono', monospace;
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
 
-/* ── Header ── */
-header { display:flex; align-items:center; gap:1rem; padding:.6rem 1rem; background:var(--panel); border-bottom:1px solid var(--b2); flex-shrink:0; z-index:50; }
+/* Header */
+header {
+  display:flex; align-items:center; gap:1rem;
+  padding:.6rem 1rem;
+  background:var(--panel);
+  border-bottom:1px solid var(--b2);
+  flex-shrink:0; z-index:50;
+}
 .logo { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:900; color:var(--cyan); letter-spacing:.15em; }
 .logo b { color:var(--green); }
 .search-wrap { flex:1; max-width:360px; position:relative; }
-#searchInput { width:100%; background:#0a1820; border:1px solid var(--b2); color:var(--text); font-family:'Share Tech Mono',monospace; font-size:.8rem; padding:.42rem .8rem .42rem 1.8rem; outline:none; }
+#searchInput {
+  width:100%; background:#0a1820; border:1px solid var(--b2); color:var(--text);
+  font-family:'Share Tech Mono',monospace; font-size:.8rem;
+  padding:.42rem .8rem .42rem 1.8rem; outline:none;
+}
 #searchInput:focus { border-color:var(--cyan); }
 #searchInput::placeholder { color:var(--dim); }
 .si { position:absolute; left:.55rem; top:50%; transform:translateY(-50%); color:var(--dim); pointer-events:none; }
-#searchDrop { position:absolute; top:calc(100%+3px); left:0; right:0; background:var(--panel); border:1px solid var(--b2); z-index:999; display:none; max-height:180px; overflow-y:auto; }
+#searchDrop {
+  position:absolute; top:calc(100% + 3px); left:0; right:0;
+  background:var(--panel); border:1px solid var(--b2);
+  z-index:999; display:none; max-height:180px; overflow-y:auto;
+}
 .sd-item { padding:.45rem .8rem; font-size:.75rem; cursor:pointer; border-bottom:1px solid var(--b1); }
 .sd-item:hover { background:rgba(0,212,255,.06); color:var(--cyan); }
+
 .hstats { display:flex; gap:1.2rem; margin-left:auto; align-items:center; }
 .hs { display:flex; flex-direction:column; align-items:flex-end; }
 .hs-l { font-size:.48rem; color:var(--dim); text-transform:uppercase; letter-spacing:.18em; }
 .hs-v { font-family:'Orbitron',sans-serif; font-size:.75rem; color:var(--green); }
 .hs-v.w { color:var(--yellow); }
 .hs-v.h { color:var(--orange); }
-.tbtn { background:transparent; border:1px solid var(--b2); color:var(--dim); font-family:'Share Tech Mono',monospace; font-size:.6rem; padding:.32rem .65rem; cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:.06em; }
+
+.tbtn {
+  background:transparent; border:1px solid var(--b2); color:var(--dim);
+  font-family:'Share Tech Mono',monospace; font-size:.6rem; padding:.32rem .65rem;
+  cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:.06em;
+}
 .tbtn:hover { border-color:var(--cyan); color:var(--cyan); }
 .tbtn.on { border-color:var(--cyan); color:var(--cyan); background:rgba(0,212,255,.07); }
 .tbtn.gold { border-color:rgba(255,215,0,.5); color:var(--gold); }
-.ubtn { background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-family:'Share Tech Mono',monospace; font-weight:700; font-size:.6rem; padding:.32rem .8rem; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; }
+
+.ubtn {
+  background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000;
+  font-family:'Share Tech Mono',monospace; font-weight:700; font-size:.6rem;
+  padding:.32rem .8rem; cursor:pointer; text-transform:uppercase; letter-spacing:.06em;
+}
 .ubtn:hover { filter:brightness(1.1); }
-.pro-badge { display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; font-family:'Orbitron',sans-serif; font-size:.55rem; font-weight:700; padding:.2rem .5rem; letter-spacing:.1em; }
+
+.pro-badge {
+  display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000;
+  font-family:'Orbitron',sans-serif; font-size:.55rem; font-weight:700;
+  padding:.2rem .5rem; letter-spacing:.1em;
+}
 .pro-badge.on { display:block; }
 
-/* ── Layout ── */
+/* Layout */
 .body { display:flex; flex:1; overflow:hidden; }
 
-/* ── Sidebar ── */
-.sb { width:248px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--b2); overflow-y:auto; padding:.7rem; display:flex; flex-direction:column; gap:.8rem; }
+/* Sidebar */
+.sb {
+  width:248px; flex-shrink:0; background:var(--panel);
+  border-right:1px solid var(--b2); overflow-y:auto; padding:.7rem;
+  display:flex; flex-direction:column; gap:.8rem;
+}
 .sb::-webkit-scrollbar { width:2px; }
 .sb::-webkit-scrollbar-thumb { background:var(--b2); }
+
 .box { border:1px solid var(--b1); padding:.7rem; position:relative; }
 .box::before { content:''; position:absolute; top:0; left:0; width:24px; height:2px; background:var(--cyan); }
-.box-title { font-family:'Orbitron',sans-serif; font-size:.52rem; letter-spacing:.18em; color:var(--cyan); text-transform:uppercase; margin-bottom:.6rem; padding-bottom:.35rem; border-bottom:1px solid var(--b1); }
+.box-title {
+  font-family:'Orbitron',sans-serif; font-size:.52rem; letter-spacing:.18em;
+  color:var(--cyan); text-transform:uppercase; margin-bottom:.6rem;
+  padding-bottom:.35rem; border-bottom:1px solid var(--b1);
+}
 
 .row { margin-bottom:.6rem; }
 .row-head { display:flex; justify-content:space-between; margin-bottom:.28rem; }
@@ -62,28 +111,55 @@ header { display:flex; align-items:center; gap:1rem; padding:.6rem 1rem; backgro
 .row-val.drain { color:#ff9944; }
 .row-val.hot { color:var(--orange); }
 
-input[type=range] { -webkit-appearance:none; width:100%; height:3px; background:var(--b2); outline:none; cursor:pointer; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:13px; height:13px; border-radius:50%; background:var(--cyan); box-shadow:0 0 7px rgba(0,212,255,.8); cursor:pointer; }
+input[type=range] {
+  -webkit-appearance:none; width:100%; height:3px; background:var(--b2);
+  outline:none; cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:13px; height:13px; border-radius:50%;
+  background:var(--cyan); box-shadow:0 0 7px rgba(0,212,255,.8); cursor:pointer;
+}
 input[type=range].spin::-webkit-slider-thumb { background:var(--yellow); box-shadow:0 0 7px rgba(255,204,0,.8); }
 input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-shadow:0 0 7px rgba(255,107,53,.8); }
 
 .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:.3rem; }
-.pbtn { background:var(--bg); border:1px solid var(--b2); color:var(--text); font-family:'Share Tech Mono',monospace; font-size:.56rem; padding:.32rem .2rem; cursor:pointer; text-align:center; line-height:1.35; transition:all .12s; }
+.pbtn {
+  background:var(--bg); border:1px solid var(--b2); color:var(--text);
+  font-family:'Share Tech Mono',monospace; font-size:.56rem;
+  padding:.32rem .2rem; cursor:pointer; text-align:center; line-height:1.35;
+  transition:all .12s;
+}
 .pbtn:hover { border-color:var(--cyan); color:var(--cyan); }
 .pbtn.on { border-color:var(--green); color:var(--green); background:rgba(0,255,157,.07); }
 
 .trow { display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem; }
 .trow-label { font-size:.58rem; color:var(--text); }
-.tog { width:28px; height:14px; background:var(--b2); border-radius:7px; position:relative; cursor:pointer; border:none; flex-shrink:0; transition:background .18s; }
+.tog {
+  width:28px; height:14px; background:var(--b2); border-radius:7px;
+  position:relative; cursor:pointer; border:none; flex-shrink:0;
+  transition:background .18s;
+}
 .tog.on { background:var(--cyan); }
-.tog::after { content:''; position:absolute; width:10px; height:10px; background:#fff; border-radius:50%; top:2px; left:2px; transition:transform .18s; }
+.tog::after {
+  content:''; position:absolute; width:10px; height:10px; background:#fff;
+  border-radius:50%; top:2px; left:2px; transition:transform .18s;
+}
 .tog.on::after { transform:translateX(14px); }
 
-.rbtn { width:100%; background:transparent; border:1px solid var(--b2); color:var(--dim); font-family:'Share Tech Mono',monospace; font-size:.58rem; padding:.4rem; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; transition:all .15s; margin-top:.3rem; }
+.rbtn {
+  width:100%; background:transparent; border:1px solid var(--b2); color:var(--dim);
+  font-family:'Share Tech Mono',monospace; font-size:.58rem; padding:.4rem;
+  cursor:pointer; text-transform:uppercase; letter-spacing:.1em; transition:all .15s;
+  margin-top:.3rem;
+}
 .rbtn:hover { border-color:var(--orange); color:var(--orange); }
 
 .lock-wrap { position:relative; }
-.lock-overlay { position:absolute; inset:0; background:rgba(3,13,18,.88); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; z-index:5; border:1px solid rgba(255,215,0,.2); cursor:pointer; }
+.lock-overlay {
+  position:absolute; inset:0; background:rgba(3,13,18,.88);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:.35rem; z-index:5; border:1px solid rgba(255,215,0,.2); cursor:pointer;
+}
 .lock-overlay:hover { background:rgba(3,13,18,.72); border-color:var(--gold); }
 .lock-text { font-size:.54rem; color:var(--gold); text-align:center; line-height:1.6; letter-spacing:.06em; }
 
@@ -91,12 +167,15 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
 .leg-row { display:flex; align-items:center; gap:.38rem; font-size:.56rem; color:var(--dim); }
 .leg-sw { width:16px; height:6px; flex-shrink:0; }
 
-/* ── Map ── */
+/* Map */
 .map-wrap { flex:1; position:relative; }
 #map { width:100%; height:100%; }
 
-/* Click popup */
-.cpop { position:absolute; top:1rem; right:1rem; background:rgba(6,15,22,.95); border:1px solid var(--b2); padding:.65rem .9rem; z-index:20; min-width:158px; display:none; }
+.cpop {
+  position:absolute; top:1rem; right:1rem; background:rgba(6,15,22,.95);
+  border:1px solid var(--b2); padding:.65rem .9rem; z-index:20;
+  min-width:158px; display:none;
+}
 .cpop.on { display:block; }
 .cpop-lbl { font-size:.52rem; color:var(--dim); text-transform:uppercase; letter-spacing:.14em; margin-bottom:.25rem; }
 .cpop-elev { font-family:'Orbitron',sans-serif; font-size:1.05rem; color:var(--green); margin-bottom:.25rem; }
@@ -106,38 +185,58 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
 .cpop-x { position:absolute; top:.35rem; right:.45rem; background:none; border:none; color:var(--dim); cursor:pointer; font-size:.78rem; }
 .cpop-x:hover { color:var(--text); }
 
-/* Info bar */
-.ibar { position:absolute; bottom:0; left:0; right:0; height:21px; background:rgba(3,13,18,.96); border-top:1px solid var(--b1); display:flex; align-items:center; padding:0 .8rem; gap:1.8rem; font-size:.52rem; color:var(--dim); z-index:20; }
+.ibar {
+  position:absolute; bottom:0; left:0; right:0; height:21px;
+  background:rgba(3,13,18,.96); border-top:1px solid var(--b1);
+  display:flex; align-items:center; padding:0 .8rem; gap:1.8rem;
+  font-size:.52rem; color:var(--dim); z-index:20;
+}
 .ibar span { color:var(--cyan); }
 
-/* Flood legend */
-.fleg { position:absolute; bottom:28px; right:.8rem; background:rgba(6,15,22,.93); border:1px solid var(--b2); padding:.5rem .7rem; font-size:.58rem; color:var(--dim); z-index:20; display:none; }
+.fleg {
+  position:absolute; bottom:28px; right:.8rem; background:rgba(6,15,22,.93);
+  border:1px solid var(--b2); padding:.5rem .7rem; font-size:.58rem;
+  color:var(--dim); z-index:20; display:none;
+}
 .fleg.on { display:block; }
 .fleg-title { color:var(--cyan); margin-bottom:.3rem; font-size:.54rem; text-transform:uppercase; letter-spacing:.12em; }
 .fleg-row { display:flex; align-items:center; gap:.35rem; margin-bottom:.18rem; }
 .fleg-sw { width:14px; height:7px; }
 
-/* Modal */
-.mbg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.86); z-index:1000; align-items:center; justify-content:center; }
+.mbg {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.86);
+  z-index:1000; align-items:center; justify-content:center;
+}
 .mbg.on { display:flex; }
-.mbox { background:var(--panel); border:1px solid var(--b2); width:390px; max-width:95vw; position:relative; overflow:hidden; }
+.mbox {
+  background:var(--panel); border:1px solid var(--b2);
+  width:390px; max-width:95vw; position:relative; overflow:hidden;
+}
 .mbar { height:3px; background:linear-gradient(90deg,var(--cyan),var(--green),var(--gold)); }
 .minner { padding:1.4rem; }
 .mtitle { font-family:'Orbitron',sans-serif; font-size:.95rem; color:var(--gold); margin-bottom:.28rem; }
 .msub { font-size:.65rem; color:var(--dim); margin-bottom:1.1rem; }
 .mfeats { list-style:none; margin-bottom:1.1rem; }
-.mfeats li { font-size:.74rem; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--b1); display:flex; gap:.55rem; }
+.mfeats li {
+  font-size:.74rem; color:var(--text); padding:.28rem 0;
+  border-bottom:1px solid var(--b1); display:flex; gap:.55rem;
+}
 .mfeats li:last-child { border:none; }
 .ck { color:var(--green); }
 .mprice { display:flex; align-items:baseline; gap:.45rem; margin-bottom:1.1rem; }
 .mprice-big { font-family:'Orbitron',sans-serif; font-size:1.9rem; color:var(--gold); }
 .mprice-note { font-size:.6rem; color:var(--dim); line-height:1.5; }
-.paybtn { width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-family:'Orbitron',sans-serif; font-weight:700; font-size:.82rem; letter-spacing:.08em; padding:.82rem; cursor:pointer; }
+.paybtn {
+  width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000;
+  font-family:'Orbitron',sans-serif; font-weight:700; font-size:.82rem;
+  letter-spacing:.08em; padding:.82rem; cursor:pointer;
+}
 .paybtn:hover { filter:brightness(1.1); }
 .paybtn:disabled { filter:grayscale(1); cursor:not-allowed; }
 .msecure { text-align:center; font-size:.56rem; color:var(--dim); margin-top:.55rem; }
 .mx { position:absolute; top:.65rem; right:.75rem; background:none; border:none; color:var(--dim); font-size:.95rem; cursor:pointer; }
 .mx:hover { color:var(--text); }
+
 .spin { display:inline-block; width:11px; height:11px; border:2px solid #000; border-top-color:transparent; border-radius:50%; animation:sp .7s linear infinite; vertical-align:middle; }
 @keyframes sp { to { transform:rotate(360deg); } }
 </style>
@@ -146,25 +245,27 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
 
 <header>
   <div class="logo">GEO<b>DEPTH</b></div>
+
   <div class="search-wrap">
     <span class="si">⌕</span>
-    <input id="searchInput" type="text" placeholder="Search any city or place...">
+    <input id="searchInput" type="text" placeholder="Search any city or place..." />
     <div id="searchDrop"></div>
   </div>
+
   <div class="hstats">
     <div class="hs"><div class="hs-l">Sea Level Δ</div><div class="hs-v" id="hSL">+0 m</div></div>
     <div class="hs"><div class="hs-l">Spin</div><div class="hs-v" id="hSpin">1.00×</div></div>
     <div class="hs"><div class="hs-l">Gravity</div><div class="hs-v" id="hGrav">OFF</div></div>
-    <button class="tbtn on" id="btnMap" onclick="setStyle('street')">🗺 Map</button>
-    <button class="tbtn gold" id="btnSat" onclick="setStyle('satellite')">🛰 Satellite</button>
+
+    <button class="tbtn on" id="btnMap" type="button">🗺 Map</button>
+    <button class="tbtn gold" id="btnSat" type="button">🛰 Satellite</button>
     <div class="pro-badge" id="proBadge">PRO</div>
-    <button class="ubtn" id="ubtn" onclick="openModal()">Unlock Satellite — $10</button>
+    <button class="ubtn" id="ubtn" type="button">Unlock Satellite — $10</button>
   </div>
 </header>
 
 <div class="body">
   <div class="sb">
-
     <div class="box">
       <div class="box-title">⬡ Sea Level</div>
       <div class="row">
@@ -172,7 +273,7 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
           <span class="row-name">Δ Elevation</span>
           <span class="row-val" id="slVal">+0 m</span>
         </div>
-        <input type="range" id="slRange" min="-500" max="5000" value="0" step="1">
+        <input type="range" id="slRange" min="-500" max="5000" value="0" step="1" />
         <div style="display:flex;justify-content:space-between;font-size:.5rem;color:var(--dim);margin-top:.25rem"><span>−500m</span><span>+5000m</span></div>
       </div>
     </div>
@@ -180,14 +281,14 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
     <div class="box">
       <div class="box-title">◎ Historical Presets</div>
       <div class="pgrid">
-        <button class="pbtn on" id="p0" onclick="preset(0,'p0')">Modern<br>+0m</button>
-        <button class="pbtn" id="p1" onclick="preset(-120,'p1')">Ice Age<br>−120m</button>
-        <button class="pbtn" id="p2" onclick="preset(-60,'p2')">Younger<br>Dryas −60m</button>
-        <button class="pbtn" id="p3" onclick="preset(6,'p3')">Holocene<br>+6m</button>
-        <button class="pbtn" id="p4" onclick="preset(70,'p4')">Eocene<br>+70m</button>
-        <button class="pbtn" id="p5" onclick="preset(-400,'p5')">Snowball<br>−400m</button>
-        <button class="pbtn" id="p6" onclick="preset(80,'p6')">Cretaceous<br>+80m</button>
-        <button class="pbtn" id="p7" onclick="preset(5000,'p7')">Total<br>Flood +5km</button>
+        <button class="pbtn on" id="p0" type="button" data-preset="0">Modern<br>+0m</button>
+        <button class="pbtn" id="p1" type="button" data-preset="-120">Ice Age<br>−120m</button>
+        <button class="pbtn" id="p2" type="button" data-preset="-60">Younger<br>Dryas −60m</button>
+        <button class="pbtn" id="p3" type="button" data-preset="6">Holocene<br>+6m</button>
+        <button class="pbtn" id="p4" type="button" data-preset="70">Eocene<br>+70m</button>
+        <button class="pbtn" id="p5" type="button" data-preset="-400">Snowball<br>−400m</button>
+        <button class="pbtn" id="p6" type="button" data-preset="80">Cretaceous<br>+80m</button>
+        <button class="pbtn" id="p7" type="button" data-preset="5000">Total<br>Flood +5km</button>
       </div>
     </div>
 
@@ -195,7 +296,7 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
       <div class="box-title">↻ Spin Anomaly</div>
       <div class="row">
         <div class="row-head"><span class="row-name">Rotation Factor</span><span class="row-val" id="spinVal">1.00×</span></div>
-        <input type="range" class="spin" id="spinRange" min="0.1" max="3.0" value="1.0" step="0.05">
+        <input type="range" class="spin" id="spinRange" min="0.1" max="3.0" value="1.0" step="0.05" />
       </div>
       <div style="font-size:.53rem;color:var(--dim);line-height:1.75">&gt;1× faster → equatorial bulge<br>&lt;1× slower → polar redistribution</div>
     </div>
@@ -204,25 +305,25 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
       <div class="box-title">⊕ Gravity Anomaly</div>
       <div class="row">
         <div class="row-head"><span class="row-name">Strength</span><span class="row-val hot" id="gravVal">0%</span></div>
-        <input type="range" class="grav" id="gravRange" min="0" max="100" value="0">
+        <input type="range" class="grav" id="gravRange" min="0" max="100" value="0" />
       </div>
       <div class="row">
         <div class="row-head"><span class="row-name">Radius</span><span class="row-val" id="gravRadVal">500 km</span></div>
-        <input type="range" id="gravRadRange" min="100" max="3000" value="500" step="100">
+        <input type="range" id="gravRadRange" min="100" max="3000" value="500" step="100" />
       </div>
       <div style="font-size:.53rem;color:var(--dim);margin-bottom:.3rem">Click map to place anomaly</div>
-      <button class="rbtn" onclick="clearGrav()">Clear Anomaly</button>
+      <button class="rbtn" id="clearGravBtn" type="button">Clear Anomaly</button>
     </div>
 
     <div class="box lock-wrap">
       <div class="box-title">◈ Display Options</div>
-      <div class="trow"><span class="trow-label">Satellite View</span><button class="tog" id="togSat" onclick="setStyle(this.classList.contains('on')?'street':'satellite')"></button></div>
-      <div class="trow"><span class="trow-label">3D Terrain</span><button class="tog on" id="tog3D" onclick="toggle3D()"></button></div>
-      <div class="trow"><span class="trow-label">Flood Overlay</span><button class="tog on" id="togFlood" onclick="toggleFlood()"></button></div>
-      <div class="trow"><span class="trow-label">Place Labels</span><button class="tog on" id="togLabels" onclick="toggleLabels()"></button></div>
-      <div class="lock-overlay" id="lockOverlay" onclick="openModal()">
+      <div class="trow"><span class="trow-label">Satellite View</span><button class="tog" id="togSat" type="button"></button></div>
+      <div class="trow"><span class="trow-label">3D Terrain</span><button class="tog on" id="tog3D" type="button"></button></div>
+      <div class="trow"><span class="trow-label">Flood Overlay</span><button class="tog on" id="togFlood" type="button"></button></div>
+      <div class="trow"><span class="trow-label">Place Labels</span><button class="tog on" id="togLabels" type="button"></button></div>
+      <div class="lock-overlay" id="lockOverlay">
         <div style="font-size:1.1rem">🔒</div>
-        <div class="lock-text">PRO FEATURE<br>Satellite Imagery<br>Unlock for $10</div>
+        <div class="lock-text">PRO FEATURE<br />Satellite Imagery<br />Unlock for $10</div>
       </div>
     </div>
 
@@ -238,14 +339,13 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
         <div class="leg-row"><div class="leg-sw" style="background:#ddeedd"></div>Peak / Snow</div>
       </div>
     </div>
-
   </div>
 
   <div class="map-wrap">
     <div id="map"></div>
 
     <div class="cpop" id="cpop">
-      <button class="cpop-x" onclick="document.getElementById('cpop').classList.remove('on')">✕</button>
+      <button class="cpop-x" id="cpopClose" type="button">✕</button>
       <div class="cpop-lbl">Elevation at point</div>
       <div class="cpop-elev" id="cpopElev">-- m</div>
       <div class="cpop-status" id="cpopStatus"></div>
@@ -267,11 +367,10 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
   </div>
 </div>
 
-<!-- Modal -->
 <div class="mbg" id="mbg">
   <div class="mbox">
     <div class="mbar"></div>
-    <button class="mx" onclick="closeModal()">✕</button>
+    <button class="mx" id="modalClose" type="button">✕</button>
     <div class="minner">
       <div class="mtitle">GEODEPTH PRO</div>
       <div class="msub">One-time unlock — yours forever on this device</div>
@@ -282,8 +381,8 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
         <li><span class="ck">✓</span> All future map styles</li>
         <li><span class="ck">✓</span> No subscription ever</li>
       </ul>
-      <div class="mprice"><div class="mprice-big">$10</div><div class="mprice-note">one-time<br>no subscription</div></div>
-      <button class="paybtn" id="paybtn" onclick="startCheckout()">
+      <div class="mprice"><div class="mprice-big">$10</div><div class="mprice-note">one-time<br />no subscription</div></div>
+      <button class="paybtn" id="paybtn" type="button">
         <span id="payTxt">Unlock Pro Now</span>
         <span id="paySpin" style="display:none"><div class="spin"></div></span>
       </button>
@@ -293,75 +392,111 @@ input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-sha
 </div>
 
 <script>
-// ── Config ─────────────────────────────────────────────────────────────────────
+// Config
 const MB = 'pk.eyJ1IjoiZ3JpbWVyaWNhIiwiYSI6ImNtbWZkdnp3bjA2OXcyd29weGozZXk1cXcifQ.O-Lqryp3ScXYbw0svGwwOw';
 mapboxgl.accessToken = MB;
 
-// ── State ──────────────────────────────────────────────────────────────────────
-let SL = 0, spin = 1.0, grav = 0, gravRad = 500;
-let gravLng = null, gravLat = null, gravMarker = null;
-let isPro = false, mapStyle = 'street';
-let showFlood = true, show3D = true, showLabels = true;
+// State
+let SL = 0;
+let spin = 1.0;
+let grav = 0;
+let gravRad = 500;
+let gravLng = null;
+let gravLat = null;
+let gravMarker = null;
+let isPro = false;
+let mapStyle = 'street';
+let showFlood = true;
+let show3D = true;
+let showLabels = true;
 let mapReady = false;
+let searchTimer = null;
 
 function devId() {
   let id = localStorage.getItem('gd');
-  if (!id) { id = 'gd_' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('gd', id); }
+  if (!id) {
+    id = 'gd_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('gd', id);
+  }
   return id;
 }
 const DID = devId();
 
-// ── Map ────────────────────────────────────────────────────────────────────────
-const map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/outdoors-v12',
-  center: [0, 25], zoom: 2.5,
-  projection: 'mercator'
-});
-map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+// Helpers
+function qs(id) { return document.getElementById(id); }
 
-map.on('load', () => {
-  mapReady = true;
-  addDEM();
-  addFloodLayer();
-});
+function getEffectiveSeaLevelForRendering() {
+  return SL + (spin - 1) * 600;
+}
+
+function getEffectiveSeaLevelAtLat(latDeg) {
+  const lat = latDeg * Math.PI / 180;
+  const spinOffset = (spin - 1) * 8000 * Math.pow(Math.cos(lat), 2) * 0.1;
+  const gravOffset = grav * 2;
+  return SL + spinOffset + gravOffset;
+}
+
+function updateHeaderStats() {
+  const hSL = qs('hSL');
+  hSL.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
+  hSL.className = 'hs-v' + (Math.abs(SL) > 500 ? ' h' : Math.abs(SL) > 100 ? ' w' : '');
+
+  const hSpin = qs('hSpin');
+  hSpin.textContent = spin.toFixed(2) + '×';
+  hSpin.className = 'hs-v' + (Math.abs(spin - 1) > 0.5 ? ' w' : '');
+
+  const hGrav = qs('hGrav');
+  hGrav.textContent = grav > 0 ? grav + '%' : 'OFF';
+  hGrav.className = 'hs-v' + (grav > 0 ? ' h' : '');
+}
+
+function updateFloodUI() {
+  const effective = getEffectiveSeaLevelForRendering();
+
+  qs('iFlood').textContent = (SL >= 0 ? '+' : '') + SL + ' m';
+  qs('iFlood').style.color = SL > 0 ? '#4da6ff' : SL < 0 ? '#ff9944' : 'var(--cyan)';
+  qs('fleg').classList.toggle('on', SL > 0 && showFlood);
+
+  if (mapReady && map.getLayer('flood')) {
+    map.setPaintProperty('flood', 'raster-color', makeRamp(effective));
+    map.setPaintProperty('flood', 'raster-opacity', showFlood ? 0.75 : 0);
+  }
+}
+
+function syncStyleButtons() {
+  const isSat = mapStyle === 'satellite';
+  qs('btnMap').classList.toggle('on', !isSat);
+  qs('btnSat').classList.toggle('on', isSat);
+  qs('togSat').classList.toggle('on', isSat);
+}
+
+function applyLabelVisibility() {
+  if (!mapReady) return;
+  const style = map.getStyle();
+  if (!style || !style.layers) return;
+
+  style.layers.forEach(layer => {
+    if (layer.type === 'symbol') {
+      try {
+        map.setLayoutProperty(layer.id, 'visibility', showLabels ? 'visible' : 'none');
+      } catch (_) {}
+    }
+  });
+}
 
 function addDEM() {
   if (!map.getSource('dem')) {
-    map.addSource('dem', { type:'raster-dem', url:'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize:512, maxzoom:14 });
+    map.addSource('dem', {
+      type: 'raster-dem',
+      url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+      tileSize: 512,
+      maxzoom: 14
+    });
   }
-  map.setTerrain(show3D ? { source:'dem', exaggeration:1 } : null);
-}
-
-// ── Flood layer ────────────────────────────────────────────────────────────────
-// Uses raster-color expression on the terrain DEM to paint flooded areas blue
-function addFloodLayer() {
-  if (!map.getSource('fdem')) {
-    map.addSource('fdem', { type:'raster-dem', url:'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize:256, maxzoom:14 });
-  }
-  if (map.getLayer('flood')) map.removeLayer('flood');
-
-  // Find first label layer to insert flood below labels
-  let firstLabel;
-  for (const l of map.getStyle().layers) { if (l.type === 'symbol') { firstLabel = l.id; break; } }
-
-  map.addLayer({
-    id: 'flood',
-    type: 'raster',
-    source: 'fdem',
-    paint: {
-      'raster-opacity': showFlood ? 0.75 : 0,
-      'raster-resampling': 'linear',
-      'raster-color': makeRamp(SL),
-      'raster-color-range': [-500, 9000]
-    }
-  }, firstLabel);
+  map.setTerrain(show3D ? { source: 'dem', exaggeration: 1 } : null);
 }
 
 function makeRamp(sl) {
-  // raster-value = elevation in metres from the DEM
-  // pixels BELOW sl = blue (flood), pixels ABOVE sl = transparent
   const eSL = Math.min(sl, 8900);
   return [
     'interpolate', ['linear'], ['raster-value'],
@@ -376,225 +511,399 @@ function makeRamp(sl) {
   ];
 }
 
-function applyFlood() {
-  if (!mapReady || !map.getLayer('flood')) return;
-  map.setPaintProperty('flood', 'raster-color', makeRamp(SL));
-  map.setPaintProperty('flood', 'raster-opacity', showFlood ? 0.75 : 0);
-  // legend
-  document.getElementById('fleg').classList.toggle('on', SL > 0 && showFlood);
-  // info bar
-  const el = document.getElementById('iFlood');
-  el.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
-  el.style.color = SL > 0 ? '#4da6ff' : SL < 0 ? '#ff9944' : 'var(--cyan)';
-  // header
-  const h = document.getElementById('hSL');
-  h.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
-  h.className = 'hs-v' + (Math.abs(SL) > 500 ? ' h' : Math.abs(SL) > 100 ? ' w' : '');
+function addFloodLayer() {
+  if (!map.getSource('fdem')) {
+    map.addSource('fdem', {
+      type: 'raster-dem',
+      url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+      tileSize: 256,
+      maxzoom: 14
+    });
+  }
+
+  if (map.getLayer('flood')) {
+    map.removeLayer('flood');
+  }
+
+  let firstLabel;
+  const style = map.getStyle();
+  if (style && style.layers) {
+    for (const layer of style.layers) {
+      if (layer.type === 'symbol') {
+        firstLabel = layer.id;
+        break;
+      }
+    }
+  }
+
+  map.addLayer({
+    id: 'flood',
+    type: 'raster',
+    source: 'fdem',
+    paint: {
+      'raster-opacity': showFlood ? 0.75 : 0,
+      'raster-resampling': 'linear',
+      'raster-color': makeRamp(getEffectiveSeaLevelForRendering()),
+      'raster-color-range': [-500, 9000]
+    }
+  }, firstLabel);
 }
 
-// ── Slider ─────────────────────────────────────────────────────────────────────
-document.getElementById('slRange').addEventListener('input', function() {
-  SL = parseInt(this.value);
-  const el = document.getElementById('slVal');
-  el.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
-  el.className = 'row-val' + (SL > 0 ? ' flood' : SL < 0 ? ' drain' : '');
-  applyFlood();
-});
+function reapplyStyleDependentState() {
+  addDEM();
+  addFloodLayer();
+  applyLabelVisibility();
+  syncStyleButtons();
+  updateFloodUI();
+}
 
-// ── Presets ────────────────────────────────────────────────────────────────────
+function setStyle(style) {
+  if (style === 'satellite' && !isPro) {
+    openModal();
+    return;
+  }
+
+  mapStyle = style;
+  syncStyleButtons();
+
+  map.setStyle(
+    style === 'satellite'
+      ? 'mapbox://styles/mapbox/satellite-streets-v12'
+      : 'mapbox://styles/mapbox/outdoors-v12'
+  );
+}
+
 function preset(val, id) {
   SL = val;
-  document.getElementById('slRange').value = val;
-  const el = document.getElementById('slVal');
+  qs('slRange').value = String(val);
+
+  const el = qs('slVal');
   el.textContent = (val >= 0 ? '+' : '') + val + ' m';
   el.className = 'row-val' + (val > 0 ? ' flood' : val < 0 ? ' drain' : '');
+
   document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
-  applyFlood();
-}
+  qs(id).classList.add('on');
 
-// ── Spin ───────────────────────────────────────────────────────────────────────
-document.getElementById('spinRange').addEventListener('input', function() {
-  spin = parseFloat(this.value);
-  document.getElementById('spinVal').textContent = spin.toFixed(2) + '×';
-  const h = document.getElementById('hSpin');
-  h.textContent = spin.toFixed(2) + '×';
-  h.className = 'hs-v' + (Math.abs(spin - 1) > 0.5 ? ' w' : '');
-  // Spin shifts effective sea level — reapply with offset
-  const spinSL = SL + (spin - 1) * 600;
-  if (mapReady && map.getLayer('flood')) {
-    map.setPaintProperty('flood', 'raster-color', makeRamp(spinSL));
-  }
-});
-
-// ── Gravity ────────────────────────────────────────────────────────────────────
-document.getElementById('gravRange').addEventListener('input', function() {
-  grav = parseInt(this.value);
-  document.getElementById('gravVal').textContent = grav + '%';
-  const h = document.getElementById('hGrav');
-  h.textContent = grav > 0 ? grav + '%' : 'OFF';
-  h.className = 'hs-v' + (grav > 0 ? ' h' : '');
-  updateGravMarker();
-});
-
-document.getElementById('gravRadRange').addEventListener('input', function() {
-  gravRad = parseInt(this.value);
-  document.getElementById('gravRadVal').textContent = gravRad + ' km';
-  updateGravMarker();
-});
-
-function clearGrav() {
-  grav = 0; gravLng = null; gravLat = null;
-  document.getElementById('gravRange').value = 0;
-  document.getElementById('gravVal').textContent = '0%';
-  document.getElementById('hGrav').textContent = 'OFF';
-  document.getElementById('hGrav').className = 'hs-v';
-  if (gravMarker) { gravMarker.remove(); gravMarker = null; }
+  updateHeaderStats();
+  updateFloodUI();
 }
 
 function updateGravMarker() {
-  if (gravMarker) { gravMarker.remove(); gravMarker = null; }
+  if (gravMarker) {
+    gravMarker.remove();
+    gravMarker = null;
+  }
   if (gravLng === null || grav === 0) return;
-  const sz = Math.max(24, gravRad / 30);
+
+  const size = Math.max(24, gravRad / 30);
   const el = document.createElement('div');
-  el.style.cssText = `width:${sz}px;height:${sz}px;border-radius:50%;border:2px solid rgba(255,107,53,0.85);box-shadow:0 0 18px rgba(255,107,53,0.45);background:rgba(255,107,53,0.08);pointer-events:none;`;
-  gravMarker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([gravLng, gravLat]).addTo(map);
+  el.style.cssText = `
+    width:${size}px;
+    height:${size}px;
+    border-radius:50%;
+    border:2px solid rgba(255,107,53,0.85);
+    box-shadow:0 0 18px rgba(255,107,53,0.45);
+    background:rgba(255,107,53,0.08);
+    pointer-events:none;
+  `;
+
+  gravMarker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+    .setLngLat([gravLng, gravLat])
+    .addTo(map);
 }
 
-// ── Toggles ────────────────────────────────────────────────────────────────────
+function clearGrav() {
+  grav = 0;
+  gravLng = null;
+  gravLat = null;
+  qs('gravRange').value = '0';
+  qs('gravVal').textContent = '0%';
+  updateHeaderStats();
+  if (gravMarker) {
+    gravMarker.remove();
+    gravMarker = null;
+  }
+}
+
 function toggle3D() {
   show3D = !show3D;
-  document.getElementById('tog3D').classList.toggle('on', show3D);
-  if (!mapReady) return;
-  map.setTerrain(show3D ? { source:'dem', exaggeration:1 } : null);
+  qs('tog3D').classList.toggle('on', show3D);
+  if (mapReady) {
+    map.setTerrain(show3D ? { source: 'dem', exaggeration: 1 } : null);
+  }
 }
 
 function toggleFlood() {
   showFlood = !showFlood;
-  document.getElementById('togFlood').classList.toggle('on', showFlood);
-  applyFlood();
+  qs('togFlood').classList.toggle('on', showFlood);
+  updateFloodUI();
 }
 
 function toggleLabels() {
   showLabels = !showLabels;
-  document.getElementById('togLabels').classList.toggle('on', showLabels);
-  if (!mapReady) return;
-  map.getStyle().layers.forEach(l => {
-    if (l.type === 'symbol') map.setLayoutProperty(l.id, 'visibility', showLabels ? 'visible' : 'none');
-  });
+  qs('togLabels').classList.toggle('on', showLabels);
+  applyLabelVisibility();
 }
 
-// ── Map style ──────────────────────────────────────────────────────────────────
-function setStyle(style) {
-  if (style === 'satellite' && !isPro) { openModal(); return; }
-  mapStyle = style;
-  const isSat = style === 'satellite';
-  document.getElementById('btnMap').classList.toggle('on', !isSat);
-  document.getElementById('btnSat').classList.toggle('on', isSat);
-  document.getElementById('togSat').classList.toggle('on', isSat);
-  map.setStyle(isSat ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/outdoors-v12');
-  map.once('style.load', () => { addDEM(); addFloodLayer(); });
+function openModal() {
+  qs('mbg').classList.add('on');
 }
 
-// ── Click elevation ────────────────────────────────────────────────────────────
-map.on('click', e => {
-  const elev = map.queryTerrainElevation(e.lngLat, { exaggerated: false });
-  document.getElementById('cpop').classList.add('on');
-  if (elev !== null) {
-    document.getElementById('cpopElev').textContent = elev.toFixed(1) + ' m';
-    const lat = e.lngLat.lat * Math.PI / 180;
-    const spinOffset = (spin - 1) * 8000 * Math.pow(Math.cos(lat), 2) * 0.1;
-    const eff = SL + spinOffset + grav * 2;
-    const st = document.getElementById('cpopStatus');
-    if (elev < eff) { st.className = 'cpop-status flood'; st.textContent = '💧 Flooded · ' + (eff - elev).toFixed(0) + 'm deep'; }
-    else { st.className = 'cpop-status safe'; st.textContent = '✓ Safe · ' + (elev - eff).toFixed(0) + 'm clearance'; }
-  } else {
-    document.getElementById('cpopElev').textContent = 'No data';
-    document.getElementById('cpopStatus').textContent = '';
-  }
-  // Place gravity anomaly
-  if (grav > 0) { gravLng = e.lngLat.lng; gravLat = e.lngLat.lat; updateGravMarker(); }
-});
-
-// ── Cursor ─────────────────────────────────────────────────────────────────────
-map.on('mousemove', e => {
-  document.getElementById('iCoord').textContent = e.lngLat.lat.toFixed(4) + '°, ' + e.lngLat.lng.toFixed(4) + '°';
-  const elev = map.queryTerrainElevation(e.lngLat, { exaggerated: false });
-  document.getElementById('iElev').textContent = elev !== null ? elev.toFixed(0) + ' m' : '--';
-});
-
-// ── Search ─────────────────────────────────────────────────────────────────────
-let stimer;
-document.getElementById('searchInput').addEventListener('input', e => {
-  clearTimeout(stimer);
-  const q = e.target.value.trim();
-  if (q.length < 3) { document.getElementById('searchDrop').style.display = 'none'; return; }
-  stimer = setTimeout(async () => {
-    try {
-      const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${MB}&limit=5`);
-      const d = await r.json();
-      const box = document.getElementById('searchDrop');
-      if (!d.features?.length) { box.style.display = 'none'; return; }
-      box.innerHTML = d.features.map(f => `<div class="sd-item" onclick="flyTo(${f.center[0]},${f.center[1]},'${f.place_name.replace(/'/g, "\\'")}')">${f.place_name}</div>`).join('');
-      box.style.display = 'block';
-    } catch(e) {}
-  }, 380);
-});
-document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) document.getElementById('searchDrop').style.display = 'none'; });
-function flyTo(lng, lat, name) {
-  map.flyTo({ center:[lng,lat], zoom:8, duration:1400 });
-  document.getElementById('searchInput').value = name;
-  document.getElementById('searchDrop').style.display = 'none';
+function closeModal() {
+  qs('mbg').classList.remove('on');
 }
 
-// ── Pro / Stripe ───────────────────────────────────────────────────────────────
-async function checkPro() {
-  if (localStorage.getItem('gd_pro') === '1') { activatePro(false); return; }
-  try {
-    const r = await fetch('/api/status', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({deviceId:DID}) });
-    const d = await r.json();
-    if (d.pro) activatePro(true);
-  } catch(e) {}
-}
-function activatePro(save=true) {
+function activatePro(save = true) {
   isPro = true;
   if (save) localStorage.setItem('gd_pro', '1');
-  document.getElementById('proBadge').classList.add('on');
-  document.getElementById('ubtn').style.display = 'none';
-  document.getElementById('btnSat').classList.remove('gold');
-  document.getElementById('lockOverlay').style.display = 'none';
+
+  qs('proBadge').classList.add('on');
+  qs('ubtn').style.display = 'none';
+  qs('btnSat').classList.remove('gold');
+  qs('lockOverlay').style.display = 'none';
+  closeModal();
 }
+
+async function checkPro() {
+  if (localStorage.getItem('gd_pro') === '1') {
+    activatePro(false);
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: DID })
+    });
+
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.pro) activatePro(true);
+  } catch (_) {}
+}
+
 async function handleReturn() {
   const p = new URLSearchParams(window.location.search);
-  if (p.get('pro') === 'success') {
-    try {
-      const r = await fetch('/api/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId:p.get('session_id'), deviceId:p.get('device')||DID}) });
+  if (p.get('pro') !== 'success') return;
+
+  try {
+    const r = await fetch('/api/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: p.get('session_id'),
+        deviceId: p.get('device') || DID
+      })
+    });
+
+    if (r.ok) {
       const d = await r.json();
       if (d.success) activatePro(true);
-    } catch(e) { activatePro(true); }
-    window.history.replaceState({}, '', '/');
+    }
+  } catch (_) {
+    activatePro(true);
   }
-}
-async function startCheckout() {
-  document.getElementById('payTxt').style.display = 'none';
-  document.getElementById('paySpin').style.display = 'inline-block';
-  document.getElementById('paybtn').disabled = true;
-  try {
-    const r = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({deviceId:DID}) });
-    const d = await r.json();
-    if (d.url) window.location.href = d.url;
-    else throw new Error(d.error || 'Error');
-  } catch(err) {
-    alert('Payment error: ' + err.message);
-    document.getElementById('payTxt').style.display = 'inline';
-    document.getElementById('paySpin').style.display = 'none';
-    document.getElementById('paybtn').disabled = false;
-  }
-}
-function openModal() { document.getElementById('mbg').classList.add('on'); }
-function closeModal() { document.getElementById('mbg').classList.remove('on'); }
-document.getElementById('mbg').addEventListener('click', e => { if (e.target === document.getElementById('mbg')) closeModal(); });
 
+  window.history.replaceState({}, '', window.location.pathname);
+}
+
+async function startCheckout() {
+  qs('payTxt').style.display = 'none';
+  qs('paySpin').style.display = 'inline-block';
+  qs('paybtn').disabled = true;
+
+  try {
+    const r = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: DID })
+    });
+
+    const d = await r.json();
+    if (d.url) {
+      window.location.href = d.url;
+      return;
+    }
+    throw new Error(d.error || 'Checkout failed');
+  } catch (err) {
+    alert('Payment error: ' + err.message);
+    qs('payTxt').style.display = 'inline';
+    qs('paySpin').style.display = 'none';
+    qs('paybtn').disabled = false;
+  }
+}
+
+function flyTo(lng, lat, name) {
+  map.flyTo({ center: [lng, lat], zoom: 8, duration: 1400 });
+  qs('searchInput').value = name;
+  qs('searchDrop').style.display = 'none';
+}
+
+function renderSearchResults(features) {
+  const box = qs('searchDrop');
+  box.innerHTML = '';
+
+  if (!features || !features.length) {
+    box.style.display = 'none';
+    return;
+  }
+
+  features.forEach(feature => {
+    const item = document.createElement('div');
+    item.className = 'sd-item';
+    item.textContent = feature.place_name;
+    item.addEventListener('click', () => flyTo(feature.center[0], feature.center[1], feature.place_name));
+    box.appendChild(item);
+  });
+
+  box.style.display = 'block';
+}
+
+// Map init
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/outdoors-v12',
+  center: [0, 25],
+  zoom: 2.5,
+  projection: 'mercator'
+});
+
+map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+map.on('load', () => {
+  mapReady = true;
+  reapplyStyleDependentState();
+});
+
+map.on('style.load', () => {
+  if (!mapReady) return;
+  reapplyStyleDependentState();
+});
+
+map.on('click', e => {
+  const elev = map.queryTerrainElevation(e.lngLat, { exaggerated: false });
+
+  qs('cpop').classList.add('on');
+
+  if (elev !== null && Number.isFinite(elev)) {
+    qs('cpopElev').textContent = elev.toFixed(1) + ' m';
+
+    const effective = getEffectiveSeaLevelAtLat(e.lngLat.lat);
+    const status = qs('cpopStatus');
+
+    if (elev < effective) {
+      status.className = 'cpop-status flood';
+      status.textContent = '💧 Flooded · ' + (effective - elev).toFixed(0) + 'm deep';
+    } else {
+      status.className = 'cpop-status safe';
+      status.textContent = '✓ Safe · ' + (elev - effective).toFixed(0) + 'm clearance';
+    }
+  } else {
+    qs('cpopElev').textContent = 'No data';
+    qs('cpopStatus').textContent = '';
+    qs('cpopStatus').className = 'cpop-status';
+  }
+
+  if (grav > 0) {
+    gravLng = e.lngLat.lng;
+    gravLat = e.lngLat.lat;
+    updateGravMarker();
+  }
+});
+
+map.on('mousemove', e => {
+  qs('iCoord').textContent = e.lngLat.lat.toFixed(4) + '°, ' + e.lngLat.lng.toFixed(4) + '°';
+  const elev = map.queryTerrainElevation(e.lngLat, { exaggerated: false });
+  qs('iElev').textContent = elev !== null && Number.isFinite(elev) ? elev.toFixed(0) + ' m' : '--';
+});
+
+// Event wiring
+qs('btnMap').addEventListener('click', () => setStyle('street'));
+qs('btnSat').addEventListener('click', () => setStyle('satellite'));
+qs('ubtn').addEventListener('click', openModal);
+qs('lockOverlay').addEventListener('click', openModal);
+qs('modalClose').addEventListener('click', closeModal);
+qs('cpopClose').addEventListener('click', () => qs('cpop').classList.remove('on'));
+qs('mbg').addEventListener('click', e => { if (e.target === qs('mbg')) closeModal(); });
+
+qs('paybtn').addEventListener('click', startCheckout);
+qs('clearGravBtn').addEventListener('click', clearGrav);
+
+qs('togSat').addEventListener('click', () => setStyle(mapStyle === 'satellite' ? 'street' : 'satellite'));
+qs('tog3D').addEventListener('click', toggle3D);
+qs('togFlood').addEventListener('click', toggleFlood);
+qs('togLabels').addEventListener('click', toggleLabels);
+
+qs('slRange').addEventListener('input', function () {
+  SL = parseInt(this.value, 10);
+  const el = qs('slVal');
+  el.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
+  el.className = 'row-val' + (SL > 0 ? ' flood' : SL < 0 ? ' drain' : '');
+  updateHeaderStats();
+  updateFloodUI();
+});
+
+qs('spinRange').addEventListener('input', function () {
+  spin = parseFloat(this.value);
+  qs('spinVal').textContent = spin.toFixed(2) + '×';
+  updateHeaderStats();
+  updateFloodUI();
+});
+
+qs('gravRange').addEventListener('input', function () {
+  grav = parseInt(this.value, 10);
+  qs('gravVal').textContent = grav + '%';
+  updateHeaderStats();
+  updateGravMarker();
+});
+
+qs('gravRadRange').addEventListener('input', function () {
+  gravRad = parseInt(this.value, 10);
+  qs('gravRadVal').textContent = gravRad + ' km';
+  updateGravMarker();
+});
+
+document.querySelectorAll('.pbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    preset(parseInt(btn.dataset.preset, 10), btn.id);
+  });
+});
+
+qs('searchInput').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+
+  const q = e.target.value.trim();
+  if (q.length < 3) {
+    qs('searchDrop').style.display = 'none';
+    return;
+  }
+
+  searchTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${MB}&limit=5`
+      );
+
+      if (!r.ok) throw new Error('Geocoding failed');
+      const d = await r.json();
+      renderSearchResults(d.features || []);
+    } catch (_) {
+      qs('searchDrop').style.display = 'none';
+    }
+  }, 380);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) {
+    qs('searchDrop').style.display = 'none';
+  }
+});
+
+// Boot
+updateHeaderStats();
+updateFloodUI();
 checkPro();
 handleReturn();
 </script>
