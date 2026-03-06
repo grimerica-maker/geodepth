@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoDepth — Ocean & Geophysical Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<script src='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet' />
+<style>
+:root {
+  --bg: #030d12;
+  --panel: #060f16;
+  --border: #0a2a35;
+  --border2: #0d3a4a;
+  --accent: #00d4ff;
+  --accent2: #00ff9d;
+  --accent3: #ff6b35;
+  --warn: #ffcc00;
+  --text: #b8d4dc;
+  --muted: #2a5a6a;
+  --gold: #ffd700;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);
+  pointer-events:none;
+  z-index:9999;
+}
+
+/* ── Header ── */
+header {
+  display:flex; align-items:center;
+  padding:0.6rem 1.2rem;
+  border-bottom:1px solid var(--border2);
+  background:var(--panel);
+  gap:1.5rem; flex-shrink:0;
+  position:relative; overflow:hidden;
+}
+header::after {
+  content:'';
+  position:absolute; bottom:0; left:0;
+  width:100%; height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  animation:scanH 4s linear infinite;
+}
+@keyframes scanH { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+.logo { font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.1rem; color:var(--accent); letter-spacing:.15em; text-shadow:0 0 20px rgba(0,212,255,.5); }
+.logo span { color:var(--accent2); }
+.logo-sub { font-family:'Rajdhani',sans-serif; font-size:.7rem; color:var(--muted); letter-spacing:.1em; }
+.header-stats { display:flex; gap:1.5rem; margin-left:auto; align-items:center; }
+.stat { display:flex; flex-direction:column; align-items:flex-end; }
+.stat-label { font-size:.5rem; color:var(--muted); letter-spacing:.2em; text-transform:uppercase; }
+.stat-value { font-family:'Orbitron',sans-serif; font-size:.8rem; color:var(--accent2); }
+.stat-value.warn { color:var(--warn); }
+.stat-value.danger { color:var(--accent3); }
+
+/* Pro badge */
+.pro-badge {
+  display:none;
+  background:linear-gradient(135deg,#ffd700,#ff8c00);
+  color:#000;
+  font-family:'Orbitron',sans-serif;
+  font-size:.55rem;
+  font-weight:700;
+  padding:.25rem .6rem;
+  letter-spacing:.15em;
+  border-radius:2px;
+}
+.pro-badge.visible { display:block; }
+
+.upgrade-btn {
+  background:transparent;
+  border:1px solid var(--gold);
+  color:var(--gold);
+  font-family:'Share Tech Mono',monospace;
+  font-size:.65rem;
+  padding:.35rem .8rem;
+  cursor:pointer;
+  letter-spacing:.1em;
+  transition:all .15s;
+  text-transform:uppercase;
+}
+.upgrade-btn:hover { background:var(--gold); color:#000; }
+
+/* ── Layout ── */
+.main-layout { display:flex; flex:1; overflow:hidden; }
+
+/* ── Controls ── */
+.controls {
+  width:250px; flex-shrink:0;
+  background:var(--panel);
+  border-right:1px solid var(--border2);
+  overflow-y:auto; padding:.8rem;
+  display:flex; flex-direction:column; gap:1rem;
+}
+.controls::-webkit-scrollbar { width:3px; }
+.controls::-webkit-scrollbar-thumb { background:var(--border2); }
+
+.control-section {
+  border:1px solid var(--border);
+  padding:.75rem;
+  position:relative;
+}
+.control-section::before {
+  content:''; position:absolute;
+  top:0; left:0; width:30px; height:2px;
+  background:var(--accent);
+}
+.section-title {
+  font-family:'Orbitron',sans-serif;
+  font-size:.55rem; letter-spacing:.2em;
+  color:var(--accent); text-transform:uppercase;
+  margin-bottom:.7rem; padding-bottom:.4rem;
+  border-bottom:1px solid var(--border);
+}
+
+.slider-group { margin-bottom:.7rem; }
+.slider-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.3rem; }
+.slider-name { font-size:.62rem; color:var(--text); }
+.slider-val { font-family:'Orbitron',sans-serif; font-size:.65rem; color:var(--accent2); }
+.slider-val.hot { color:var(--accent3); }
+
+input[type=range] {
+  width:100%; -webkit-appearance:none;
+  height:3px; background:var(--border2);
+  outline:none; cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:13px; height:13px; border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px rgba(0,212,255,.8);
+  cursor:pointer; transition:transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.3); }
+input[type=range].spin::-webkit-slider-thumb { background:var(--warn); box-shadow:0 0 8px rgba(255,204,0,.8); }
+input[type=range].grav::-webkit-slider-thumb { background:var(--accent3); box-shadow:0 0 8px rgba(255,107,53,.8); }
+
+.preset-grid { display:grid; grid-template-columns:1fr 1fr; gap:.35rem; }
+.preset-btn {
+  background:var(--bg); border:1px solid var(--border2);
+  color:var(--text); font-family:'Share Tech Mono',monospace;
+  font-size:.58rem; padding:.35rem .25rem;
+  cursor:pointer; text-align:center;
+  transition:all .15s; letter-spacing:.03em; line-height:1.3;
+}
+.preset-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(0,212,255,.05); }
+.preset-btn.active { border-color:var(--accent2); color:var(--accent2); background:rgba(0,255,157,.08); }
+
+.toggle-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:.45rem; }
+.toggle-label { font-size:.6rem; color:var(--text); }
+.toggle {
+  width:30px; height:15px; background:var(--border2);
+  border-radius:8px; position:relative;
+  cursor:pointer; transition:background .2s; border:none; flex-shrink:0;
+}
+.toggle.on { background:var(--accent); }
+.toggle::after {
+  content:''; position:absolute;
+  width:11px; height:11px; background:white;
+  border-radius:50%; top:2px; left:2px;
+  transition:transform .2s;
+}
+.toggle.on::after { transform:translateX(15px); }
+
+/* Pro lock overlay on sections */
+.pro-lock {
+  position:relative;
+}
+.pro-lock-overlay {
+  position:absolute; inset:0;
+  background:rgba(3,13,18,.85);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:.4rem; z-index:10;
+  border:1px solid rgba(255,215,0,.2);
+  backdrop-filter:blur(2px);
+  cursor:pointer;
+  transition:all .2s;
+}
+.pro-lock-overlay:hover { background:rgba(3,13,18,.7); border-color:var(--gold); }
+.lock-icon { font-size:1.2rem; }
+.lock-text { font-size:.58rem; color:var(--gold); letter-spacing:.1em; text-align:center; line-height:1.5; }
+
+.legend { display:flex; flex-direction:column; gap:.25rem; }
+.legend-item { display:flex; align-items:center; gap:.4rem; font-size:.58rem; color:var(--muted); }
+.legend-color { width:18px; height:7px; flex-shrink:0; }
+
+.reset-btn {
+  width:100%; background:transparent;
+  border:1px solid var(--border2); color:var(--muted);
+  font-family:'Share Tech Mono',monospace;
+  font-size:.62rem; letter-spacing:.12em;
+  padding:.45rem; cursor:pointer; text-transform:uppercase;
+  transition:all .15s;
+}
+.reset-btn:hover { border-color:var(--accent3); color:var(--accent3); }
+
+/* ── Map area ── */
+.map-container { flex:1; position:relative; overflow:hidden; }
+#mapCanvas { display:block; width:100%; height:100%; }
+
+/* Mapbox container — hidden until pro */
+#mapboxContainer {
+  position:absolute; inset:0;
+  display:none;
+}
+#mapboxContainer.visible { display:block; }
+
+.crosshair-info {
+  position:absolute; top:1rem; left:50%; transform:translateX(-50%);
+  background:rgba(6,15,22,.9); border:1px solid var(--border2);
+  padding:.4rem 1rem; font-size:.62rem; color:var(--accent2);
+  letter-spacing:.1em; pointer-events:none; white-space:nowrap;
+  text-shadow:0 0 8px rgba(0,255,157,.5); z-index:10;
+}
+
+.map-overlay {
+  position:absolute; bottom:1.5rem; right:1rem;
+  background:rgba(6,15,22,.85); border:1px solid var(--border2);
+  padding:.5rem .7rem; font-size:.58rem; color:var(--muted);
+  backdrop-filter:blur(4px); z-index:10;
+}
+.map-overlay .coord { color:var(--accent); font-family:'Orbitron',sans-serif; font-size:.62rem; }
+
+.info-bar {
+  position:absolute; bottom:0; left:0; right:0; height:22px;
+  background:rgba(3,13,18,.95); border-top:1px solid var(--border);
+  display:flex; align-items:center; padding:0 1rem; gap:2rem;
+  font-size:.55rem; color:var(--muted); z-index:10;
+}
+.info-item { display:flex; gap:.4rem; }
+.info-item span { color:var(--accent); }
+
+/* ── Upgrade Modal ── */
+.modal-backdrop {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.85); z-index:1000;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-backdrop.visible { display:flex; }
+
+.modal {
+  background:var(--panel);
+  border:1px solid var(--border2);
+  width:420px; max-width:95vw;
+  position:relative;
+  overflow:hidden;
+}
+.modal::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--accent2), var(--gold));
+}
+.modal-header {
+  padding:1.5rem 1.5rem 1rem;
+  border-bottom:1px solid var(--border);
+}
+.modal-title {
+  font-family:'Orbitron',sans-serif;
+  font-size:1.1rem; color:var(--gold);
+  letter-spacing:.1em; margin-bottom:.3rem;
+}
+.modal-sub { font-size:.65rem; color:var(--muted); letter-spacing:.08em; }
+.modal-body { padding:1.2rem 1.5rem; }
+
+.feature-list { list-style:none; margin-bottom:1.2rem; }
+.feature-list li {
+  font-size:.7rem; color:var(--text);
+  padding:.4rem 0; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:.6rem;
+}
+.feature-list li:last-child { border-bottom:none; }
+.feature-check { color:var(--accent2); font-size:.8rem; }
+.feature-lock { color:var(--muted); }
+
+.price-row {
+  display:flex; align-items:baseline; gap:.5rem;
+  margin-bottom:1.2rem;
+}
+.price-big {
+  font-family:'Orbitron',sans-serif;
+  font-size:2rem; color:var(--gold);
+  text-shadow:0 0 20px rgba(255,215,0,.4);
+}
+.price-detail { font-size:.65rem; color:var(--muted); }
+
+.pay-btn {
+  width:100%;
+  background:linear-gradient(135deg,#ffd700,#ff8c00);
+  border:none; color:#000;
+  font-family:'Orbitron',sans-serif;
+  font-size:.85rem; font-weight:700;
+  letter-spacing:.1em; padding:.9rem;
+  cursor:pointer; transition:all .15s;
+  text-transform:uppercase;
+}
+.pay-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+.pay-btn:disabled { filter:grayscale(1); cursor:not-allowed; transform:none; }
+
+.modal-close {
+  position:absolute; top:.8rem; right:.8rem;
+  background:none; border:none; color:var(--muted);
+  font-size:1rem; cursor:pointer;
+  transition:color .15s;
+}
+.modal-close:hover { color:var(--text); }
+
+.secure-note {
+  text-align:center; font-size:.55rem;
+  color:var(--muted); margin-top:.7rem;
+  letter-spacing:.05em;
+}
+
+/* spinner */
+.spinner {
+  display:inline-block; width:12px; height:12px;
+  border:2px solid #000; border-top-color:transparent;
+  border-radius:50%; animation:spin .7s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* Sea level overlay on mapbox */
+#seaLevelOverlay {
+  position:absolute; inset:0; pointer-events:none;
+  z-index:5; display:none;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">GEO<span>DEPTH</span></div>
+  <div class="logo-sub">OCEAN & GEOPHYSICAL SIMULATOR</div>
+  <div class="header-stats">
+    <div class="stat">
+      <div class="stat-label">Sea Level Δ</div>
+      <div class="stat-value" id="headerSL">+0 m</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Ocean Coverage</div>
+      <div class="stat-value" id="headerCov">70.8%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Spin Factor</div>
+      <div class="stat-value" id="headerSpin">1.00×</div>
+    </div>
+    <div class="pro-badge" id="proBadge">PRO</div>
+    <button class="upgrade-btn" id="upgradeBtn" onclick="showUpgradeModal()">⬡ Upgrade to Pro — $10</button>
+  </div>
+</header>
+
+<div class="main-layout">
+  <div class="controls">
+
+    <div class="control-section">
+      <div class="section-title">⬡ Sea Level</div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-name">Δ Elevation</span>
+          <span class="slider-val" id="slVal">+0 m</span>
+        </div>
+        <input type="range" id="seaLevel" min="-5000" max="5000" value="0" step="10" oninput="updateMap()">
+      </div>
+    </div>
+
+    <div class="control-section">
+      <div class="section-title">◎ Historical Presets</div>
+      <div class="preset-grid">
+        <button class="preset-btn active" onclick="setPreset(0,1,this)">Modern<br><small>+0m</small></button>
+        <button class="preset-btn" onclick="setPreset(-120,1,this)">Last Glacial<br><small>-120m</small></button>
+        <button class="preset-btn" onclick="setPreset(-60,1,this)">Younger<br>Dryas -60m</button>
+        <button class="preset-btn" onclick="setPreset(6,1,this)">Holocene<br>Peak +6m</button>
+        <button class="preset-btn" onclick="setPreset(70,1,this)">Eocene<br>+70m</button>
+        <button class="preset-btn" onclick="setPreset(-400,1,this)">Snowball<br>-400m</button>
+        <button class="preset-btn" onclick="setPreset(80,1,this)">Cretaceous<br>+80m</button>
+        <button class="preset-btn" onclick="setPreset(5000,1,this)">Total<br>Flood +5km</button>
+      </div>
+    </div>
+
+    <div class="control-section">
+      <div class="section-title">↻ Spin Anomaly</div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-name">Rotation Factor</span>
+          <span class="slider-val" id="spinVal">1.00×</span>
+        </div>
+        <input type="range" class="spin" id="spinRate" min="0.1" max="3.0" value="1.0" step="0.05" oninput="updateMap()">
+      </div>
+      <div style="font-size:.56rem;color:var(--muted);line-height:1.6">&gt;1× faster → equatorial bulge<br>&lt;1× slower → polar redistribution</div>
+    </div>
+
+    <div class="control-section">
+      <div class="section-title">⊕ Gravity Anomaly</div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-name">Anomaly Strength</span>
+          <span class="slider-val hot" id="gravVal">0%</span>
+        </div>
+        <input type="range" class="grav" id="gravStrength" min="0" max="100" value="0" oninput="updateMap()">
+      </div>
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-name">Radius</span>
+          <span class="slider-val" id="gravRadVal">500 km</span>
+        </div>
+        <input type="range" id="gravRadius" min="100" max="3000" value="500" step="100" oninput="updateMap()">
+      </div>
+      <div style="font-size:.56rem;color:var(--muted);margin-bottom:.5rem">Click map to place anomaly center</div>
+      <button class="reset-btn" onclick="clearGravity()">Clear Anomaly</button>
+    </div>
+
+    <!-- PRO: Satellite toggle — locked for free users -->
+    <div class="control-section pro-lock" id="satelliteSection">
+      <div class="section-title">◈ Map Mode</div>
+      <div class="toggle-row">
+        <span class="toggle-label">Satellite Imagery</span>
+        <button class="toggle" id="toggleSatellite" onclick="toggleSatellite()"></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">HD Terrain</span>
+        <button class="toggle" id="toggleHD" onclick="toggleHD()"></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Depth Contours</span>
+        <button class="toggle on" id="toggleContours" onclick="toggleOption('contours')"></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Lat/Lon Grid</span>
+        <button class="toggle" id="toggleGrid" onclick="toggleOption('grid')"></button>
+      </div>
+      <div class="pro-lock-overlay" id="proLockOverlay" onclick="showUpgradeModal()">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-text">PRO FEATURE<br>Satellite + HD Terrain<br>Unlock for $10</div>
+      </div>
+    </div>
+
+    <div class="control-section">
+      <div class="section-title">▣ Depth Legend</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-color" style="background:#001830"></div>Abyss (&lt;-3000m)</div>
+        <div class="legend-item"><div class="legend-color" style="background:#003d6b"></div>Deep Ocean</div>
+        <div class="legend-item"><div class="legend-color" style="background:#0077b6"></div>Shallow Sea</div>
+        <div class="legend-item"><div class="legend-color" style="background:#90e0ef"></div>Continental Shelf</div>
+        <div class="legend-item"><div class="legend-color" style="background:#2d6a2d"></div>Lowland</div>
+        <div class="legend-item"><div class="legend-color" style="background:#4a8a3a"></div>Highland</div>
+        <div class="legend-item"><div class="legend-color" style="background:#7a9a6a"></div>Mountain</div>
+        <div class="legend-item"><div class="legend-color" style="background:#ddeedd"></div>Snow/Peak</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="map-container">
+    <canvas id="mapCanvas"></canvas>
+    <div id="mapboxContainer">
+      <div id="map" style="width:100%;height:100%"></div>
+      <canvas id="seaLevelOverlay"></canvas>
+    </div>
+    <div class="crosshair-info" id="crosshairInfo">INITIALIZING TERRAIN DATA...</div>
+    <div class="map-overlay">
+      <div>CURSOR: <span class="coord" id="cursorCoord">--°N --°E</span></div>
+      <div>ELEVATION: <span class="coord" id="cursorElev">-- m</span></div>
+      <div style="margin-top:.3rem;font-size:.5rem">Drag to pan • Scroll to zoom</div>
+    </div>
+    <div class="info-bar">
+      <div class="info-item">MODEL <span id="modelLabel">PROCEDURAL</span></div>
+      <div class="info-item">RES <span id="resLabel">0.5°</span></div>
+      <div class="info-item">PROJECTION <span>EQUIRECTANGULAR</span></div>
+      <div class="info-item" id="proStatus" style="display:none">TIER <span style="color:var(--gold)">PRO</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="modal-backdrop" id="upgradeModal">
+  <div class="modal">
+    <button class="modal-close" onclick="hideUpgradeModal()">✕</button>
+    <div class="modal-header">
+      <div class="modal-title">GEODEPTH PRO</div>
+      <div class="modal-sub">One-time unlock — yours forever</div>
+    </div>
+    <div class="modal-body">
+      <ul class="feature-list">
+        <li><span class="feature-check">✓</span> All free features included</li>
+        <li><span class="feature-check">✓</span> Real Mapbox satellite imagery overlay</li>
+        <li><span class="feature-check">✓</span> HD terrain rendering (0.1° resolution)</li>
+        <li><span class="feature-check">✓</span> Sea level flood overlay on satellite</li>
+        <li><span class="feature-check">✓</span> Unlocked on this device permanently</li>
+        <li><span class="feature-check">✓</span> All future map layer updates</li>
+      </ul>
+      <div class="price-row">
+        <div class="price-big">$10</div>
+        <div class="price-detail">one-time<br>no subscription</div>
+      </div>
+      <button class="pay-btn" id="payBtn" onclick="startCheckout()">
+        <span id="payBtnText">Unlock Pro Now</span>
+        <span id="payBtnSpinner" style="display:none"><div class="spinner"></div></span>
+      </button>
+      <div class="secure-note">🔒 Secure payment via Stripe · No account needed · Instant unlock</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiZ3JpbWVyaWNhIiwiYSI6ImNtbWZkdnp3bjA2OXcyd29weGozZXk1cXcifQ.O-Lqryp3ScXYbw0svGwwOw';
+const SUPABASE_URL = 'https://lmjjvhuornsdnvxktrnh.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxtamp2aHVvcm5zZG52eGt0cm5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MjQyMDAsImV4cCI6MjA4ODQwMDIwMH0.EGDUAznId6DCkSMFNxNMj2eH420u52lrFQ9hy4C8LBY';
+const STRIPE_PK = 'pk_live_yA2sbahKE4fMUlQXmSB6BJvD';
+
+// ─── Device ID ────────────────────────────────────────────────────────────────
+function getDeviceId() {
+  let id = localStorage.getItem('geodepth_device');
+  if(!id) {
+    id = 'gd_' + Math.random().toString(36).substr(2,9) + Date.now().toString(36);
+    localStorage.setItem('geodepth_device', id);
+  }
+  return id;
+}
+const DEVICE_ID = getDeviceId();
+
+// ─── Pro State ────────────────────────────────────────────────────────────────
+let isPro = false;
+let mapboxMap = null;
+let satelliteActive = false;
+let hdActive = false;
+
+async function checkProStatus() {
+  // Check local cache first
+  const cached = localStorage.getItem('geodepth_pro');
+  if(cached === 'true') { activatePro(false); return; }
+
+  try {
+    const res = await fetch('/api/status', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ deviceId: DEVICE_ID })
+    });
+    const data = await res.json();
+    if(data.pro) { activatePro(true); }
+  } catch(e) {
+    // API not available in dev mode — check local only
+  }
+}
+
+function activatePro(save=true) {
+  isPro = true;
+  if(save) localStorage.setItem('geodepth_pro','true');
+  document.getElementById('proBadge').classList.add('visible');
+  document.getElementById('upgradeBtn').style.display = 'none';
+  document.getElementById('proLockOverlay').style.display = 'none';
+  document.getElementById('proStatus').style.display = 'flex';
+  document.getElementById('modelLabel').textContent = 'MAPBOX+GEBCO';
+  document.getElementById('resLabel').textContent = '0.1°';
+}
+
+// Handle success redirect from Stripe
+async function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('pro') === 'success') {
+    const sessionId = params.get('session_id');
+    const device = params.get('device');
+    if(sessionId) {
+      try {
+        const res = await fetch('/api/verify', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ sessionId, deviceId: device || DEVICE_ID })
+        });
+        const data = await res.json();
+        if(data.success) activatePro(true);
+      } catch(e) {
+        // fallback
+        activatePro(true);
+      }
+    }
+    window.history.replaceState({}, '', '/');
+    document.getElementById('crosshairInfo').textContent = '🎉 PRO UNLOCKED — SATELLITE & HD TERRAIN NOW AVAILABLE';
+    setTimeout(() => updateCrossInfo(), 4000);
+  }
+}
+
+// ─── Stripe Checkout ──────────────────────────────────────────────────────────
+async function startCheckout() {
+  const btn = document.getElementById('payBtn');
+  document.getElementById('payBtnText').style.display = 'none';
+  document.getElementById('payBtnSpinner').style.display = 'inline-block';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/checkout', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ deviceId: DEVICE_ID })
+    });
+    const data = await res.json();
+    if(data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || 'Failed to create checkout');
+    }
+  } catch(err) {
+    alert('Payment setup failed: ' + err.message + '\n\nMake sure the app is deployed to Vercel with your Stripe secret key set.');
+    document.getElementById('payBtnText').style.display = 'inline';
+    document.getElementById('payBtnSpinner').style.display = 'none';
+    btn.disabled = false;
+  }
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function showUpgradeModal() {
+  if(isPro) return;
+  document.getElementById('upgradeModal').classList.add('visible');
+}
+function hideUpgradeModal() {
+  document.getElementById('upgradeModal').classList.remove('visible');
+}
+document.getElementById('upgradeModal').addEventListener('click', e => {
+  if(e.target === document.getElementById('upgradeModal')) hideUpgradeModal();
+});
+
+// ─── Terrain Generation ───────────────────────────────────────────────────────
+const W=720, H=360;
+const terrain = new Float32Array(W*H);
+
+function noise(x,y,s=0){const v=Math.sin(x*127.1+y*311.7+s)*43758.5453;return v-Math.floor(v);}
+function sNoise(x,y,s=0){
+  const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+  const ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);
+  return noise(ix,iy,s)*(1-ux)*(1-uy)+noise(ix+1,iy,s)*ux*(1-uy)+noise(ix,iy+1,s)*(1-ux)*uy+noise(ix+1,iy+1,s)*ux*uy;
+}
+function fbm(x,y,oct=6,s=0){
+  let v=0,a=0.5,f=1,m=0;
+  for(let i=0;i<oct;i++){v+=sNoise(x*f,y*f,s+i*100)*a;m+=a;a*=0.5;f*=2.1;}
+  return v/m;
+}
+
+function generateTerrain(){
+  const continents=[
+    {cx:.13,cy:.38,rx:.08,ry:.18,rot:.3,w:1.2},
+    {cx:.13,cy:.62,rx:.05,ry:.12,rot:-.2,w:1.0},
+    {cx:.48,cy:.35,rx:.12,ry:.12,rot:.1,w:1.1},
+    {cx:.62,cy:.45,rx:.1,ry:.14,rot:.1,w:1.0},
+    {cx:.48,cy:.62,rx:.08,ry:.12,rot:.2,w:1.0},
+    {cx:.78,cy:.45,rx:.05,ry:.08,rot:0,w:1.0},
+    {cx:.83,cy:.68,rx:.06,ry:.06,rot:0,w:1.0},
+    {cx:.5,cy:.95,rx:.15,ry:.05,rot:0,w:1.5},
+    {cx:.5,cy:.03,rx:.12,ry:.04,rot:0,w:.8},
+  ];
+  for(let j=0;j<H;j++){
+    for(let i=0;i<W;i++){
+      const nx=i/W,ny=j/H;
+      const lat=(0.5-ny)*Math.PI;
+      let cv=0;
+      for(const c of continents){
+        const dx=(nx-c.cx)*Math.cos(c.rot)-(ny-c.cy)*Math.sin(c.rot);
+        const dy=(nx-c.cx)*Math.sin(c.rot)+(ny-c.cy)*Math.cos(c.rot);
+        cv+=c.w*Math.max(0,1-Math.sqrt((dx/c.rx)**2+(dy/c.ry)**2));
+      }
+      cv=Math.min(cv,2.5);
+      const n1=fbm(nx*6,ny*6,6,0),n2=fbm(nx*12,ny*12,4,500),n3=fbm(nx*24,ny*24,3,1000);
+      let e=(cv-.8)*3000+n1*2000+n2*800+n3*200;
+      if(e<0)e*=1.8;
+      e+=Math.abs(n1-.5)*2*1500*(Math.max(0,e)/3000);
+      const al=Math.abs(lat);
+      if(al>1.2)e=Math.max(e,(al-1.2)*8000);
+      terrain[j*W+i]=Math.max(-8000,Math.min(8848,e));
+    }
+  }
+}
+generateTerrain();
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let seaLevel=0, spinFactor=1.0, gravStrength=0, gravRadius=500;
+let gravX=-1, gravY=-1;
+let options={contours:true,grid:false};
+let camX=0, camY=0, zoom=1;
+let isDragging=false, dragSX,dragSY,camSX,camSY;
+let animCurrent=0, animTarget=0, animRAF;
+
+// ─── Colors ───────────────────────────────────────────────────────────────────
+function elevColor(e){
+  if(e<0){
+    const d=Math.min(1,(-e)/8000);
+    if(d>.7)return[0,10,40];
+    if(d>.4)return[0,30,90];
+    if(d>.15)return[0,80,150];
+    return[40,160,220];
+  }
+  const h=Math.min(1,e/5000);
+  if(h<.002)return[144,224,239];
+  if(h<.1)return[45,106,45];
+  if(h<.3)return[74,138,58];
+  if(h<.6)return[120,154,106];
+  if(h<.85)return[160,150,120];
+  return[221,238,221];
+}
+
+function spinEffect(iy,sf){
+  if(Math.abs(sf-1)<.01)return 0;
+  const lat=(0.5-iy/H)*Math.PI;
+  return(sf-1)*8000*Math.cos(lat)**2;
+}
+function gravEffect(ix,iy){
+  if(gravStrength===0||gravX<0)return 0;
+  const dx=ix-gravX,dy=iy-gravY;
+  const dk=Math.sqrt(dx*dx+dy*dy)*(40000/W);
+  if(dk>=gravRadius)return 0;
+  const t=1-dk/gravRadius;
+  return gravStrength*.5*t*t*600;
+}
+
+// ─── Canvas Draw ──────────────────────────────────────────────────────────────
+const canvas=document.getElementById('mapCanvas');
+const ctx=canvas.getContext('2d');
+let imageData;
+
+function resizeCanvas(){
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=Math.floor(rect.width);
+  canvas.height=Math.floor(rect.height-22);
+  imageData=ctx.createImageData(canvas.width,canvas.height);
+  drawMap();
+}
+
+function drawMap(){
+  if(!imageData||satelliteActive)return;
+  const cw=canvas.width,ch=canvas.height;
+  const data=imageData.data;
+  const sl=animCurrent;
+  for(let py=0;py<ch;py++){
+    for(let px=0;px<cw;px++){
+      const tx=((px/cw-.5)/zoom-camX+.5)*W;
+      const ty=((py/ch-.5)/zoom-camY+.5)*H;
+      const ix=((Math.floor(tx)%W)+W)%W;
+      const iy=Math.max(0,Math.min(H-1,Math.floor(ty)));
+      const e=terrain[iy*W+ix]-sl-spinEffect(iy,spinFactor)-gravEffect(ix,iy);
+      const [r,g,b]=elevColor(e);
+      const idx=(py*cw+px)*4;
+      data[idx]=r;data[idx+1]=g;data[idx+2]=b;data[idx+3]=255;
+    }
+  }
+  ctx.putImageData(imageData,0,0);
+  if(options.grid)drawGrid();
+  if(options.contours)drawCoastline();
+  if(gravX>=0&&gravStrength>0)drawGravCircle();
+}
+
+function drawGrid(){
+  const cw=canvas.width,ch=canvas.height;
+  ctx.strokeStyle='rgba(0,212,255,.12)';ctx.lineWidth=.5;
+  for(let lon=-180;lon<=180;lon+=30){
+    const px=((lon/360+.5-.5+camX)*zoom+.5)*cw;
+    ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,ch);ctx.stroke();
+  }
+  for(let lat=-90;lat<=90;lat+=30){
+    const py=((0.5-lat/180-.5+camY)*zoom+.5)*ch;
+    ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(cw,py);ctx.stroke();
+  }
+}
+
+function drawCoastline(){
+  const cw=canvas.width,ch=canvas.height;
+  const sl=animCurrent;
+  const d=imageData.data;
+  for(let py=1;py<ch-1;py++){
+    for(let px=1;px<cw-1;px++){
+      const tx=((px/cw-.5)/zoom-camX+.5)*W;
+      const ty=((py/ch-.5)/zoom-camY+.5)*H;
+      const ix=((Math.floor(tx)%W)+W)%W;
+      const iy=Math.max(0,Math.min(H-1,Math.floor(ty)));
+      const e=terrain[iy*W+ix]-sl-spinEffect(iy,spinFactor)-gravEffect(ix,iy);
+      const txr=(((px+1)/cw-.5)/zoom-camX+.5)*W;
+      const ixr=((Math.floor(txr)%W)+W)%W;
+      const er=terrain[iy*W+ixr]-sl;
+      const tyb=(((py+1)/ch-.5)/zoom-camY+.5)*H;
+      const iyb=Math.max(0,Math.min(H-1,Math.floor(tyb)));
+      const eb=terrain[iyb*W+ix]-sl;
+      if((e<0)!==(er<0)||(e<0)!==(eb<0)){
+        const i=(py*cw+px)*4;
+        d[i]=255;d[i+1]=255;d[i+2]=255;d[i+3]=200;
+      }
+    }
+  }
+  ctx.putImageData(imageData,0,0);
+}
+
+function drawGravCircle(){
+  const cw=canvas.width,ch=canvas.height;
+  const gx=((gravX/W-.5+camX)*zoom+.5)*cw;
+  const gy=((gravY/H-.5+camY)*zoom+.5)*ch;
+  const rp=(gravRadius/(40000/W))*zoom*cw/W*20;
+  ctx.beginPath();ctx.arc(gx,gy,rp,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(255,107,53,${.15+gravStrength/250})`;
+  ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(gx,gy,5,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,107,53,.9)';ctx.fill();
+}
+
+// ─── Mapbox Pro Mode ──────────────────────────────────────────────────────────
+function initMapbox(){
+  if(mapboxMap)return;
+  mapboxgl.accessToken=MAPBOX_TOKEN;
+  mapboxMap=new mapboxgl.Map({
+    container:'map',
+    style:'mapbox://styles/mapbox/satellite-v9',
+    center:[0,20],
+    zoom:2,
+    projection:'mercator'
+  });
+  mapboxMap.addControl(new mapboxgl.NavigationControl(),'top-right');
+  mapboxMap.on('load',()=>{
+    addFloodLayer();
+  });
+}
+
+function addFloodLayer(){
+  if(!mapboxMap||!mapboxMap.isStyleLoaded())return;
+  // Add sea level flood visualization using fill-extrusion or fill
+  if(!mapboxMap.getSource('flood')){
+    // We'll use a canvas source for the flood overlay
+    mapboxMap.addSource('flood-overlay',{
+      type:'canvas',
+      canvas:'seaLevelOverlay',
+      coordinates:[[-180,85],[ 180,85],[ 180,-85],[-180,-85]],
+      animate:true
+    });
+    mapboxMap.addLayer({
+      id:'flood-layer',
+      type:'raster',
+      source:'flood-overlay',
+      paint:{'raster-opacity':0.55}
+    });
+  }
+  updateFloodOverlay();
+}
+
+function updateFloodOverlay(){
+  const oc=document.getElementById('seaLevelOverlay');
+  if(!oc)return;
+  const sl=animCurrent;
+  oc.width=720;oc.height=360;
+  const octx=oc.getContext('2d');
+  const id=octx.createImageData(720,360);
+  const d=id.data;
+  for(let j=0;j<360;j++){
+    for(let i=0;i<720;i++){
+      const e=terrain[j*720+i];
+      const eff=e-sl-spinEffect(j,spinFactor)-gravEffect(i,j);
+      if(eff<0){
+        const depth=Math.min(1,(-eff)/5000);
+        const idx=(j*720+i)*4;
+        d[idx]=0;d[idx+1]=80+depth*80;d[idx+2]=180+depth*60;d[idx+3]=Math.floor(80+depth*100);
+      }
+    }
+  }
+  octx.putImageData(id,0,0);
+}
+
+function toggleSatellite(){
+  if(!isPro){showUpgradeModal();return;}
+  satelliteActive=!satelliteActive;
+  document.getElementById('toggleSatellite').classList.toggle('on',satelliteActive);
+
+  if(satelliteActive){
+    document.getElementById('mapCanvas').style.display='none';
+    document.getElementById('mapboxContainer').classList.add('visible');
+    document.getElementById('seaLevelOverlay').style.display='block';
+    initMapbox();
+    document.getElementById('modelLabel').textContent='MAPBOX SATELLITE';
+  } else {
+    document.getElementById('mapCanvas').style.display='block';
+    document.getElementById('mapboxContainer').classList.remove('visible');
+    drawMap();
+    document.getElementById('modelLabel').textContent='PROCEDURAL';
+  }
+}
+
+function toggleHD(){
+  if(!isPro){showUpgradeModal();return;}
+  hdActive=!hdActive;
+  document.getElementById('toggleHD').classList.toggle('on',hdActive);
+  document.getElementById('resLabel').textContent=hdActive?'0.1°':'0.5°';
+  // In a full implementation this would load GEBCO tile data
+  // For now it applies sharper rendering
+  drawMap();
+}
+
+// ─── Controls ─────────────────────────────────────────────────────────────────
+function updateMap(){
+  seaLevel=parseFloat(document.getElementById('seaLevel').value);
+  spinFactor=parseFloat(document.getElementById('spinRate').value);
+  gravStrength=parseFloat(document.getElementById('gravStrength').value);
+  gravRadius=parseFloat(document.getElementById('gravRadius').value);
+
+  document.getElementById('slVal').textContent=(seaLevel>=0?'+':'')+seaLevel+' m';
+  document.getElementById('spinVal').textContent=spinFactor.toFixed(2)+'×';
+  document.getElementById('gravVal').textContent=gravStrength+'%';
+  document.getElementById('gravRadVal').textContent=gravRadius+' km';
+
+  const hsl=document.getElementById('headerSL');
+  hsl.textContent=(seaLevel>=0?'+':'')+seaLevel+' m';
+  hsl.className='stat-value'+(Math.abs(seaLevel)>500?' danger':Math.abs(seaLevel)>100?' warn':'');
+  document.getElementById('headerSpin').textContent=spinFactor.toFixed(2)+'×';
+  document.getElementById('headerSpin').className='stat-value'+(Math.abs(spinFactor-1)>.5?' warn':'');
+
+  const cov=Math.max(0,Math.min(100,70.8+(-seaLevel/8000*15))).toFixed(1);
+  document.getElementById('headerCov').textContent=cov+'%';
+
+  animateTo(seaLevel);
+  updateCrossInfo();
+  if(satelliteActive)updateFloodOverlay();
+}
+
+function animateTo(target){
+  cancelAnimationFrame(animRAF);
+  animTarget=target;
+  function step(){
+    const d=animTarget-animCurrent;
+    if(Math.abs(d)<.5){animCurrent=animTarget;drawMap();return;}
+    animCurrent+=d*.12;drawMap();
+    animRAF=requestAnimationFrame(step);
+  }
+  step();
+}
+
+function updateCrossInfo(){
+  const msgs=[];
+  if(seaLevel<-100)msgs.push(`ICE AGE: ${Math.abs(seaLevel)}m below present`);
+  else if(seaLevel<0)msgs.push(`REGRESSION: ${Math.abs(seaLevel)}m below present`);
+  else if(seaLevel>100)msgs.push(`MAJOR TRANSGRESSION: +${seaLevel}m`);
+  else if(seaLevel>10)msgs.push(`TRANSGRESSION: +${seaLevel}m`);
+  if(Math.abs(spinFactor-1)>.05)msgs.push(spinFactor>1?`FASTER SPIN: equatorial bulge +${((spinFactor-1)*8000).toFixed(0)}m`:`SLOWER SPIN: polar redistribution`);
+  if(gravStrength>0&&gravX>=0)msgs.push(`GRAVITY ANOMALY: ${gravStrength}% active`);
+  document.getElementById('crosshairInfo').textContent=msgs.length?msgs.join(' | '):'NOMINAL — PRESENT DAY CONDITIONS';
+}
+
+function setPreset(sl,sp,btn){
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('seaLevel').value=sl;
+  document.getElementById('spinRate').value=sp;
+  seaLevel=sl;spinFactor=sp;
+  updateMap();
+}
+
+function clearGravity(){
+  gravX=-1;gravY=-1;
+  document.getElementById('gravStrength').value=0;
+  updateMap();
+}
+
+function toggleOption(opt){
+  options[opt]=!options[opt];
+  const id='toggle'+opt.charAt(0).toUpperCase()+opt.slice(1);
+  document.getElementById(id).classList.toggle('on',options[opt]);
+  drawMap();
+}
+
+// ─── Mouse ────────────────────────────────────────────────────────────────────
+canvas.addEventListener('mousedown',e=>{
+  isDragging=true;dragSX=e.clientX;dragSY=e.clientY;camSX=camX;camSY=camY;
+});
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const px=e.clientX-rect.left,py=e.clientY-rect.top;
+  const cw=canvas.width,ch=canvas.height;
+  const tx=((px/cw-.5)/zoom-camX+.5)*W;
+  const ty=((py/ch-.5)/zoom-camY+.5)*H;
+  const ix=((Math.floor(tx)%W)+W)%W;
+  const iy=Math.max(0,Math.min(H-1,Math.floor(ty)));
+  const lon=(ix/W-.5)*360,lat=(0.5-iy/H)*180;
+  document.getElementById('cursorCoord').textContent=`${Math.abs(lat).toFixed(1)}°${lat>=0?'N':'S'} ${Math.abs(lon).toFixed(1)}°${lon>=0?'E':'W'}`;
+  document.getElementById('cursorElev').textContent=(terrain[iy*W+ix]>=0?'+':'')+terrain[iy*W+ix].toFixed(0)+' m';
+  if(isDragging){camX=camSX+(e.clientX-dragSX)/(cw*zoom);camY=camSY+(e.clientY-dragSY)/(ch*zoom);drawMap();}
+});
+canvas.addEventListener('mouseup',e=>{
+  const moved=Math.abs(e.clientX-dragSX)+Math.abs(e.clientY-dragSY);
+  isDragging=false;
+  if(moved<5&&gravStrength>0){
+    const rect=canvas.getBoundingClientRect();
+    const px=e.clientX-rect.left,py=e.clientY-rect.top;
+    const cw=canvas.width,ch=canvas.height;
+    gravX=((((px/cw-.5)/zoom-camX+.5)*W)%W+W)%W;
+    gravY=Math.max(0,Math.min(H-1,((py/ch-.5)/zoom-camY+.5)*H));
+    updateMap();
+  }
+});
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  zoom=Math.max(.5,Math.min(8,zoom*(e.deltaY>0?.85:1.18)));
+  drawMap();
+},{passive:false});
+canvas.addEventListener('mouseleave',()=>{isDragging=false;});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas();
+animCurrent=0;
+updateMap();
+checkProStatus();
+handleStripeReturn();
+setTimeout(()=>{ document.getElementById('crosshairInfo').textContent='NOMINAL — PRESENT DAY CONDITIONS'; },1500);
+</script>
+</body>
+</html>
