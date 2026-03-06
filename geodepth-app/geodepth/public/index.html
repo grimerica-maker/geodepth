@@ -3,622 +3,597 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GeoDepth — Ocean & Geophysical Simulator</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<title>GeoDepth — Sea Level Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <script src='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js'></script>
 <link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet' />
 <style>
 :root {
-  --bg:#030d12; --panel:#060f16; --border:#0a2a35; --border2:#0d3a4a;
-  --accent:#00d4ff; --accent2:#00ff9d; --accent3:#ff6b35; --warn:#ffcc00;
-  --text:#b8d4dc; --muted:#2a5a6a; --gold:#ffd700;
+  --bg: #030d12; --panel: #060f16; --b1: #0a2a35; --b2: #0d3a4a;
+  --cyan: #00d4ff; --green: #00ff9d; --orange: #ff6b35; --yellow: #ffcc00;
+  --text: #b8d4dc; --dim: #2a5a6a; --gold: #ffd700;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Share Tech Mono',monospace;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
-body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);pointer-events:none;z-index:9999;}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Share Tech Mono',monospace; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
 
-/* Header */
-header{display:flex;align-items:center;padding:.6rem 1.2rem;border-bottom:1px solid var(--border2);background:var(--panel);gap:1.5rem;flex-shrink:0;position:relative;overflow:hidden;}
-header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanH 4s linear infinite;}
-@keyframes scanH{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-.logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.1rem;color:var(--accent);letter-spacing:.15em;text-shadow:0 0 20px rgba(0,212,255,.5);}
-.logo span{color:var(--accent2);}
-.logo-sub{font-family:'Rajdhani',sans-serif;font-size:.7rem;color:var(--muted);letter-spacing:.1em;}
+/* ── Header ── */
+header { display:flex; align-items:center; gap:1rem; padding:.6rem 1rem; background:var(--panel); border-bottom:1px solid var(--b2); flex-shrink:0; z-index:50; }
+.logo { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:900; color:var(--cyan); letter-spacing:.15em; }
+.logo b { color:var(--green); }
+.search-wrap { flex:1; max-width:360px; position:relative; }
+#searchInput { width:100%; background:#0a1820; border:1px solid var(--b2); color:var(--text); font-family:'Share Tech Mono',monospace; font-size:.8rem; padding:.42rem .8rem .42rem 1.8rem; outline:none; }
+#searchInput:focus { border-color:var(--cyan); }
+#searchInput::placeholder { color:var(--dim); }
+.si { position:absolute; left:.55rem; top:50%; transform:translateY(-50%); color:var(--dim); pointer-events:none; }
+#searchDrop { position:absolute; top:calc(100%+3px); left:0; right:0; background:var(--panel); border:1px solid var(--b2); z-index:999; display:none; max-height:180px; overflow-y:auto; }
+.sd-item { padding:.45rem .8rem; font-size:.75rem; cursor:pointer; border-bottom:1px solid var(--b1); }
+.sd-item:hover { background:rgba(0,212,255,.06); color:var(--cyan); }
+.hstats { display:flex; gap:1.2rem; margin-left:auto; align-items:center; }
+.hs { display:flex; flex-direction:column; align-items:flex-end; }
+.hs-l { font-size:.48rem; color:var(--dim); text-transform:uppercase; letter-spacing:.18em; }
+.hs-v { font-family:'Orbitron',sans-serif; font-size:.75rem; color:var(--green); }
+.hs-v.w { color:var(--yellow); }
+.hs-v.h { color:var(--orange); }
+.tbtn { background:transparent; border:1px solid var(--b2); color:var(--dim); font-family:'Share Tech Mono',monospace; font-size:.6rem; padding:.32rem .65rem; cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:.06em; }
+.tbtn:hover { border-color:var(--cyan); color:var(--cyan); }
+.tbtn.on { border-color:var(--cyan); color:var(--cyan); background:rgba(0,212,255,.07); }
+.tbtn.gold { border-color:rgba(255,215,0,.5); color:var(--gold); }
+.ubtn { background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-family:'Share Tech Mono',monospace; font-weight:700; font-size:.6rem; padding:.32rem .8rem; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; }
+.ubtn:hover { filter:brightness(1.1); }
+.pro-badge { display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; font-family:'Orbitron',sans-serif; font-size:.55rem; font-weight:700; padding:.2rem .5rem; letter-spacing:.1em; }
+.pro-badge.on { display:block; }
 
-/* Search */
-.search-wrap{flex:1;max-width:380px;position:relative;}
-#searchInput{width:100%;background:#0a1a22;border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.8rem;padding:.45rem 1rem .45rem 2rem;outline:none;transition:border-color .2s;}
-#searchInput:focus{border-color:var(--accent);}
-#searchInput::placeholder{color:var(--muted);}
-.search-icon{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.8rem;pointer-events:none;}
-#searchResults{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--panel);border:1px solid var(--border2);z-index:1000;max-height:200px;overflow-y:auto;display:none;}
-.search-result{padding:.5rem 1rem;font-size:.75rem;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);}
-.search-result:hover{background:rgba(0,212,255,.05);color:var(--accent);}
+/* ── Layout ── */
+.body { display:flex; flex:1; overflow:hidden; }
 
-.header-right{display:flex;align-items:center;gap:1rem;margin-left:auto;}
-.hstat{display:flex;flex-direction:column;align-items:flex-end;}
-.hstat-label{font-size:.5rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;}
-.hstat-value{font-family:'Orbitron',sans-serif;font-size:.8rem;color:var(--accent2);}
-.hstat-value.warn{color:var(--warn);}
-.hstat-value.hot{color:var(--accent3);}
-.style-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:.35rem .7rem;cursor:pointer;letter-spacing:.08em;transition:all .15s;text-transform:uppercase;}
-.style-btn:hover{border-color:var(--accent);color:var(--accent);}
-.style-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.06);}
-.style-btn.locked{border-color:rgba(255,215,0,.4);color:var(--gold);}
-.upgrade-btn{background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;color:#000;font-family:'Share Tech Mono',monospace;font-weight:700;font-size:.62rem;padding:.35rem .9rem;cursor:pointer;letter-spacing:.08em;transition:filter .15s;text-transform:uppercase;}
-.upgrade-btn:hover{filter:brightness(1.1);}
-.pro-badge{display:none;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;font-weight:700;font-size:.58rem;padding:.22rem .55rem;letter-spacing:.12em;}
-.pro-badge.on{display:block;}
+/* ── Sidebar ── */
+.sb { width:248px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--b2); overflow-y:auto; padding:.7rem; display:flex; flex-direction:column; gap:.8rem; }
+.sb::-webkit-scrollbar { width:2px; }
+.sb::-webkit-scrollbar-thumb { background:var(--b2); }
+.box { border:1px solid var(--b1); padding:.7rem; position:relative; }
+.box::before { content:''; position:absolute; top:0; left:0; width:24px; height:2px; background:var(--cyan); }
+.box-title { font-family:'Orbitron',sans-serif; font-size:.52rem; letter-spacing:.18em; color:var(--cyan); text-transform:uppercase; margin-bottom:.6rem; padding-bottom:.35rem; border-bottom:1px solid var(--b1); }
 
-/* Layout */
-.main-layout{display:flex;flex:1;overflow:hidden;}
+.row { margin-bottom:.6rem; }
+.row-head { display:flex; justify-content:space-between; margin-bottom:.28rem; }
+.row-name { font-size:.6rem; color:var(--text); }
+.row-val { font-family:'Orbitron',sans-serif; font-size:.62rem; color:var(--green); }
+.row-val.flood { color:#4da6ff; }
+.row-val.drain { color:#ff9944; }
+.row-val.hot { color:var(--orange); }
 
-/* Sidebar */
-.sidebar{width:255px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border2);overflow-y:auto;padding:.8rem;display:flex;flex-direction:column;gap:.9rem;}
-.sidebar::-webkit-scrollbar{width:3px;}
-.sidebar::-webkit-scrollbar-thumb{background:var(--border2);}
+input[type=range] { -webkit-appearance:none; width:100%; height:3px; background:var(--b2); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:13px; height:13px; border-radius:50%; background:var(--cyan); box-shadow:0 0 7px rgba(0,212,255,.8); cursor:pointer; }
+input[type=range].spin::-webkit-slider-thumb { background:var(--yellow); box-shadow:0 0 7px rgba(255,204,0,.8); }
+input[type=range].grav::-webkit-slider-thumb { background:var(--orange); box-shadow:0 0 7px rgba(255,107,53,.8); }
 
-.ctrl-section{border:1px solid var(--border);padding:.75rem;position:relative;}
-.ctrl-section::before{content:'';position:absolute;top:0;left:0;width:28px;height:2px;background:var(--accent);}
-.sect-title{font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:.7rem;padding-bottom:.4rem;border-bottom:1px solid var(--border);}
+.pgrid { display:grid; grid-template-columns:1fr 1fr; gap:.3rem; }
+.pbtn { background:var(--bg); border:1px solid var(--b2); color:var(--text); font-family:'Share Tech Mono',monospace; font-size:.56rem; padding:.32rem .2rem; cursor:pointer; text-align:center; line-height:1.35; transition:all .12s; }
+.pbtn:hover { border-color:var(--cyan); color:var(--cyan); }
+.pbtn.on { border-color:var(--green); color:var(--green); background:rgba(0,255,157,.07); }
 
-.sl-group{margin-bottom:.7rem;}
-.sl-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem;}
-.sl-name{font-size:.62rem;color:var(--text);}
-.sl-val{font-family:'Orbitron',sans-serif;font-size:.65rem;color:var(--accent2);}
-.sl-val.hot{color:var(--accent3);}
-.sl-val.flood{color:#4da6ff;}
-.sl-val.drain{color:#ff9944;}
+.trow { display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem; }
+.trow-label { font-size:.58rem; color:var(--text); }
+.tog { width:28px; height:14px; background:var(--b2); border-radius:7px; position:relative; cursor:pointer; border:none; flex-shrink:0; transition:background .18s; }
+.tog.on { background:var(--cyan); }
+.tog::after { content:''; position:absolute; width:10px; height:10px; background:#fff; border-radius:50%; top:2px; left:2px; transition:transform .18s; }
+.tog.on::after { transform:translateX(14px); }
 
-input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--border2);outline:none;cursor:pointer;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(0,212,255,.8);cursor:pointer;transition:transform .1s;}
-input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
-input[type=range].spin::-webkit-slider-thumb{background:var(--warn);box-shadow:0 0 8px rgba(255,204,0,.8);}
-input[type=range].grav::-webkit-slider-thumb{background:var(--accent3);box-shadow:0 0 8px rgba(255,107,53,.8);}
+.rbtn { width:100%; background:transparent; border:1px solid var(--b2); color:var(--dim); font-family:'Share Tech Mono',monospace; font-size:.58rem; padding:.4rem; cursor:pointer; text-transform:uppercase; letter-spacing:.1em; transition:all .15s; margin-top:.3rem; }
+.rbtn:hover { border-color:var(--orange); color:var(--orange); }
 
-.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem;}
-.preset-btn{background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:.35rem .25rem;cursor:pointer;text-align:center;transition:all .15s;line-height:1.3;}
-.preset-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.05);}
-.preset-btn.active{border-color:var(--accent2);color:var(--accent2);background:rgba(0,255,157,.08);}
+.lock-wrap { position:relative; }
+.lock-overlay { position:absolute; inset:0; background:rgba(3,13,18,.88); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; z-index:5; border:1px solid rgba(255,215,0,.2); cursor:pointer; }
+.lock-overlay:hover { background:rgba(3,13,18,.72); border-color:var(--gold); }
+.lock-text { font-size:.54rem; color:var(--gold); text-align:center; line-height:1.6; letter-spacing:.06em; }
 
-.toggle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem;}
-.toggle-label{font-size:.6rem;color:var(--text);}
-.toggle{width:30px;height:15px;background:var(--border2);border-radius:8px;position:relative;cursor:pointer;transition:background .2s;border:none;flex-shrink:0;}
-.toggle.on{background:var(--accent);}
-.toggle::after{content:'';position:absolute;width:11px;height:11px;background:white;border-radius:50%;top:2px;left:2px;transition:transform .2s;}
-.toggle.on::after{transform:translateX(15px);}
+.leg { display:flex; flex-direction:column; gap:.22rem; }
+.leg-row { display:flex; align-items:center; gap:.38rem; font-size:.56rem; color:var(--dim); }
+.leg-sw { width:16px; height:6px; flex-shrink:0; }
 
-/* Pro lock */
-.pro-lock{position:relative;}
-.pro-lock-overlay{position:absolute;inset:0;background:rgba(3,13,18,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;z-index:10;border:1px solid rgba(255,215,0,.2);cursor:pointer;transition:all .2s;backdrop-filter:blur(2px);}
-.pro-lock-overlay:hover{background:rgba(3,13,18,.7);border-color:var(--gold);}
-.lock-icon{font-size:1.1rem;}
-.lock-text{font-size:.56rem;color:var(--gold);letter-spacing:.08em;text-align:center;line-height:1.5;}
-
-.reset-btn{width:100%;background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.45rem;cursor:pointer;text-transform:uppercase;transition:all .15s;}
-.reset-btn:hover{border-color:var(--accent3);color:var(--accent3);}
-
-.legend{display:flex;flex-direction:column;gap:.25rem;}
-.legend-item{display:flex;align-items:center;gap:.4rem;font-size:.58rem;color:var(--muted);}
-.lc{width:18px;height:7px;flex-shrink:0;}
-
-/* Map */
-.map-wrap{flex:1;position:relative;}
-#map{width:100%;height:100%;}
+/* ── Map ── */
+.map-wrap { flex:1; position:relative; }
+#map { width:100%; height:100%; }
 
 /* Click popup */
-.click-popup{position:absolute;top:1rem;right:1rem;background:rgba(6,15,22,.94);border:1px solid var(--border2);padding:.7rem 1rem;font-size:.72rem;color:var(--muted);z-index:200;min-width:165px;display:none;backdrop-filter:blur(8px);}
-.click-popup.show{display:block;}
-.popup-label{font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.3rem;}
-.popup-elev{font-family:'Orbitron',sans-serif;font-size:1.1rem;color:var(--accent2);margin-bottom:.3rem;}
-.popup-status{font-size:.68rem;}
-.popup-status.flooded{color:#4da6ff;}
-.popup-status.safe{color:#66bb6a;}
-.popup-close{position:absolute;top:.35rem;right:.5rem;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;}
-.popup-close:hover{color:var(--text);}
+.cpop { position:absolute; top:1rem; right:1rem; background:rgba(6,15,22,.95); border:1px solid var(--b2); padding:.65rem .9rem; z-index:20; min-width:158px; display:none; }
+.cpop.on { display:block; }
+.cpop-lbl { font-size:.52rem; color:var(--dim); text-transform:uppercase; letter-spacing:.14em; margin-bottom:.25rem; }
+.cpop-elev { font-family:'Orbitron',sans-serif; font-size:1.05rem; color:var(--green); margin-bottom:.25rem; }
+.cpop-status { font-size:.65rem; }
+.cpop-status.flood { color:#4da6ff; }
+.cpop-status.safe { color:#66bb6a; }
+.cpop-x { position:absolute; top:.35rem; right:.45rem; background:none; border:none; color:var(--dim); cursor:pointer; font-size:.78rem; }
+.cpop-x:hover { color:var(--text); }
 
 /* Info bar */
-.info-bar{position:absolute;bottom:0;left:0;right:0;height:22px;background:rgba(3,13,18,.95);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 1rem;gap:2rem;font-size:.55rem;color:var(--muted);z-index:100;}
-.info-item{display:flex;gap:.4rem;}
-.info-item span{color:var(--accent);}
+.ibar { position:absolute; bottom:0; left:0; right:0; height:21px; background:rgba(3,13,18,.96); border-top:1px solid var(--b1); display:flex; align-items:center; padding:0 .8rem; gap:1.8rem; font-size:.52rem; color:var(--dim); z-index:20; }
+.ibar span { color:var(--cyan); }
 
-/* Legend overlay */
-.flood-legend{position:absolute;bottom:30px;right:1rem;background:rgba(6,15,22,.92);border:1px solid var(--border2);padding:.6rem .8rem;font-size:.6rem;color:var(--muted);z-index:100;display:none;}
-.flood-legend.show{display:block;}
-.fl-title{color:var(--accent);margin-bottom:.35rem;font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;}
-.fl-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem;}
-.fl-sw{width:16px;height:8px;}
+/* Flood legend */
+.fleg { position:absolute; bottom:28px; right:.8rem; background:rgba(6,15,22,.93); border:1px solid var(--b2); padding:.5rem .7rem; font-size:.58rem; color:var(--dim); z-index:20; display:none; }
+.fleg.on { display:block; }
+.fleg-title { color:var(--cyan); margin-bottom:.3rem; font-size:.54rem; text-transform:uppercase; letter-spacing:.12em; }
+.fleg-row { display:flex; align-items:center; gap:.35rem; margin-bottom:.18rem; }
+.fleg-sw { width:14px; height:7px; }
 
 /* Modal */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
-.modal-bg.on{display:flex;}
-.modal{background:var(--panel);border:1px solid var(--border2);width:400px;max-width:95vw;position:relative;overflow:hidden;}
-.modal-bar{height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--gold));}
-.modal-inner{padding:1.5rem;}
-.modal-title{font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--gold);margin-bottom:.3rem;}
-.modal-sub{font-size:.68rem;color:var(--muted);margin-bottom:1.2rem;}
-.feat-list{list-style:none;margin-bottom:1.2rem;}
-.feat-list li{font-size:.76rem;color:var(--text);padding:.3rem 0;border-bottom:1px solid var(--border);display:flex;gap:.6rem;align-items:center;}
-.feat-list li:last-child{border:none;}
-.ck{color:var(--accent2);}
-.price-row{display:flex;align-items:baseline;gap:.5rem;margin-bottom:1.2rem;}
-.price-big{font-family:'Orbitron',sans-serif;font-size:2rem;color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.4);}
-.price-note{font-size:.63rem;color:var(--muted);line-height:1.5;}
-.pay-btn{width:100%;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;color:#000;font-family:'Orbitron',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:.08em;padding:.85rem;cursor:pointer;transition:filter .15s;}
-.pay-btn:hover{filter:brightness(1.1);}
-.pay-btn:disabled{filter:grayscale(1);cursor:not-allowed;}
-.secure-note{text-align:center;font-size:.58rem;color:var(--muted);margin-top:.6rem;}
-.modal-close{position:absolute;top:.7rem;right:.8rem;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;}
-.modal-close:hover{color:var(--text);}
-.spinner{display:inline-block;width:12px;height:12px;border:2px solid #000;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
-@keyframes spin{to{transform:rotate(360deg)}}
+.mbg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.86); z-index:1000; align-items:center; justify-content:center; }
+.mbg.on { display:flex; }
+.mbox { background:var(--panel); border:1px solid var(--b2); width:390px; max-width:95vw; position:relative; overflow:hidden; }
+.mbar { height:3px; background:linear-gradient(90deg,var(--cyan),var(--green),var(--gold)); }
+.minner { padding:1.4rem; }
+.mtitle { font-family:'Orbitron',sans-serif; font-size:.95rem; color:var(--gold); margin-bottom:.28rem; }
+.msub { font-size:.65rem; color:var(--dim); margin-bottom:1.1rem; }
+.mfeats { list-style:none; margin-bottom:1.1rem; }
+.mfeats li { font-size:.74rem; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--b1); display:flex; gap:.55rem; }
+.mfeats li:last-child { border:none; }
+.ck { color:var(--green); }
+.mprice { display:flex; align-items:baseline; gap:.45rem; margin-bottom:1.1rem; }
+.mprice-big { font-family:'Orbitron',sans-serif; font-size:1.9rem; color:var(--gold); }
+.mprice-note { font-size:.6rem; color:var(--dim); line-height:1.5; }
+.paybtn { width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-family:'Orbitron',sans-serif; font-weight:700; font-size:.82rem; letter-spacing:.08em; padding:.82rem; cursor:pointer; }
+.paybtn:hover { filter:brightness(1.1); }
+.paybtn:disabled { filter:grayscale(1); cursor:not-allowed; }
+.msecure { text-align:center; font-size:.56rem; color:var(--dim); margin-top:.55rem; }
+.mx { position:absolute; top:.65rem; right:.75rem; background:none; border:none; color:var(--dim); font-size:.95rem; cursor:pointer; }
+.mx:hover { color:var(--text); }
+.spin { display:inline-block; width:11px; height:11px; border:2px solid #000; border-top-color:transparent; border-radius:50%; animation:sp .7s linear infinite; vertical-align:middle; }
+@keyframes sp { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">GEO<span>DEPTH</span></div>
-  <div class="logo-sub">OCEAN & GEOPHYSICAL SIMULATOR</div>
+  <div class="logo">GEO<b>DEPTH</b></div>
   <div class="search-wrap">
-    <span class="search-icon">⌕</span>
-    <input type="text" id="searchInput" placeholder="Search any city or place...">
-    <div id="searchResults"></div>
+    <span class="si">⌕</span>
+    <input id="searchInput" type="text" placeholder="Search any city or place...">
+    <div id="searchDrop"></div>
   </div>
-  <div class="header-right">
-    <div class="hstat"><div class="hstat-label">Sea Level Δ</div><div class="hstat-value" id="hSL">+0 m</div></div>
-    <div class="hstat"><div class="hstat-label">Spin Factor</div><div class="hstat-value" id="hSpin">1.00×</div></div>
-    <div class="hstat"><div class="hstat-label">Grav Anomaly</div><div class="hstat-value" id="hGrav">NONE</div></div>
-    <button class="style-btn active" id="btnStreet" onclick="setStyle('street')">🗺 Map</button>
-    <button class="style-btn locked" id="btnSatellite" onclick="setStyle('satellite')">🛰 Satellite</button>
+  <div class="hstats">
+    <div class="hs"><div class="hs-l">Sea Level Δ</div><div class="hs-v" id="hSL">+0 m</div></div>
+    <div class="hs"><div class="hs-l">Spin</div><div class="hs-v" id="hSpin">1.00×</div></div>
+    <div class="hs"><div class="hs-l">Gravity</div><div class="hs-v" id="hGrav">OFF</div></div>
+    <button class="tbtn on" id="btnMap" onclick="setStyle('street')">🗺 Map</button>
+    <button class="tbtn gold" id="btnSat" onclick="setStyle('satellite')">🛰 Satellite</button>
     <div class="pro-badge" id="proBadge">PRO</div>
-    <button class="upgrade-btn" id="upgradeBtn" onclick="showModal()">Unlock Satellite — $10</button>
+    <button class="ubtn" id="ubtn" onclick="openModal()">Unlock Satellite — $10</button>
   </div>
 </header>
 
-<div class="main-layout">
+<div class="body">
+  <div class="sb">
 
-  <!-- LEFT SIDEBAR -->
-  <div class="sidebar">
-
-    <div class="ctrl-section">
-      <div class="sect-title">⬡ Sea Level</div>
-      <div class="sl-group">
-        <div class="sl-header"><span class="sl-name">Δ Elevation</span><span class="sl-val flood" id="slVal">+0 m</span></div>
-        <input type="range" id="seaSlider" min="-500" max="5000" value="0" step="1" oninput="onSeaSlider()">
-        <div style="display:flex;justify-content:space-between;font-size:.52rem;color:var(--muted);margin-top:.3rem"><span>-500m</span><span>+5000m</span></div>
+    <div class="box">
+      <div class="box-title">⬡ Sea Level</div>
+      <div class="row">
+        <div class="row-head">
+          <span class="row-name">Δ Elevation</span>
+          <span class="row-val" id="slVal">+0 m</span>
+        </div>
+        <input type="range" id="slRange" min="-500" max="5000" value="0" step="1">
+        <div style="display:flex;justify-content:space-between;font-size:.5rem;color:var(--dim);margin-top:.25rem"><span>−500m</span><span>+5000m</span></div>
       </div>
     </div>
 
-    <div class="ctrl-section">
-      <div class="sect-title">◎ Historical Presets</div>
-      <div class="preset-grid">
-        <button class="preset-btn active" onclick="setPreset(0,this)">Modern<br><small>+0m</small></button>
-        <button class="preset-btn" onclick="setPreset(-120,this)">Last Glacial<br><small>-120m</small></button>
-        <button class="preset-btn" onclick="setPreset(-60,this)">Younger<br>Dryas -60m</button>
-        <button class="preset-btn" onclick="setPreset(6,this)">Holocene<br>Peak +6m</button>
-        <button class="preset-btn" onclick="setPreset(70,this)">Eocene<br>+70m</button>
-        <button class="preset-btn" onclick="setPreset(-400,this)">Snowball<br>-400m</button>
-        <button class="preset-btn" onclick="setPreset(80,this)">Cretaceous<br>+80m</button>
-        <button class="preset-btn" onclick="setPreset(5000,this)">Total<br>Flood +5km</button>
+    <div class="box">
+      <div class="box-title">◎ Historical Presets</div>
+      <div class="pgrid">
+        <button class="pbtn on" id="p0" onclick="preset(0,'p0')">Modern<br>+0m</button>
+        <button class="pbtn" id="p1" onclick="preset(-120,'p1')">Ice Age<br>−120m</button>
+        <button class="pbtn" id="p2" onclick="preset(-60,'p2')">Younger<br>Dryas −60m</button>
+        <button class="pbtn" id="p3" onclick="preset(6,'p3')">Holocene<br>+6m</button>
+        <button class="pbtn" id="p4" onclick="preset(70,'p4')">Eocene<br>+70m</button>
+        <button class="pbtn" id="p5" onclick="preset(-400,'p5')">Snowball<br>−400m</button>
+        <button class="pbtn" id="p6" onclick="preset(80,'p6')">Cretaceous<br>+80m</button>
+        <button class="pbtn" id="p7" onclick="preset(5000,'p7')">Total<br>Flood +5km</button>
       </div>
     </div>
 
-    <div class="ctrl-section">
-      <div class="sect-title">↻ Spin Anomaly</div>
-      <div class="sl-group">
-        <div class="sl-header"><span class="sl-name">Rotation Factor</span><span class="sl-val" id="spinVal">1.00×</span></div>
-        <input type="range" class="spin" id="spinSlider" min="0.1" max="3.0" value="1.0" step="0.05" oninput="onSpin()">
+    <div class="box">
+      <div class="box-title">↻ Spin Anomaly</div>
+      <div class="row">
+        <div class="row-head"><span class="row-name">Rotation Factor</span><span class="row-val" id="spinVal">1.00×</span></div>
+        <input type="range" class="spin" id="spinRange" min="0.1" max="3.0" value="1.0" step="0.05">
       </div>
-      <div style="font-size:.55rem;color:var(--muted);line-height:1.7">&gt;1× faster → equatorial bulge<br>&lt;1× slower → polar redistribution</div>
+      <div style="font-size:.53rem;color:var(--dim);line-height:1.75">&gt;1× faster → equatorial bulge<br>&lt;1× slower → polar redistribution</div>
     </div>
 
-    <div class="ctrl-section">
-      <div class="sect-title">⊕ Gravity Anomaly</div>
-      <div class="sl-group">
-        <div class="sl-header"><span class="sl-name">Anomaly Strength</span><span class="sl-val hot" id="gravVal">0%</span></div>
-        <input type="range" class="grav" id="gravSlider" min="0" max="100" value="0" oninput="onGrav()">
+    <div class="box">
+      <div class="box-title">⊕ Gravity Anomaly</div>
+      <div class="row">
+        <div class="row-head"><span class="row-name">Strength</span><span class="row-val hot" id="gravVal">0%</span></div>
+        <input type="range" class="grav" id="gravRange" min="0" max="100" value="0">
       </div>
-      <div class="sl-group">
-        <div class="sl-header"><span class="sl-name">Radius</span><span class="sl-val" id="gravRadVal">500 km</span></div>
-        <input type="range" id="gravRadSlider" min="100" max="3000" value="500" step="100" oninput="onGravRad()">
+      <div class="row">
+        <div class="row-head"><span class="row-name">Radius</span><span class="row-val" id="gravRadVal">500 km</span></div>
+        <input type="range" id="gravRadRange" min="100" max="3000" value="500" step="100">
       </div>
-      <div style="font-size:.55rem;color:var(--muted);margin-bottom:.5rem">Click map to place anomaly center</div>
-      <button class="reset-btn" onclick="clearGravity()">Clear Anomaly</button>
+      <div style="font-size:.53rem;color:var(--dim);margin-bottom:.3rem">Click map to place anomaly</div>
+      <button class="rbtn" onclick="clearGrav()">Clear Anomaly</button>
     </div>
 
-    <div class="ctrl-section pro-lock">
-      <div class="sect-title">◈ Map Options</div>
-      <div class="toggle-row"><span class="toggle-label">Satellite View</span><button class="toggle" id="togSat" onclick="setStyle(togSat.classList.contains('on')?'street':'satellite')"></button></div>
-      <div class="toggle-row"><span class="toggle-label">3D Terrain</span><button class="toggle on" id="tog3D" onclick="toggle3D()"></button></div>
-      <div class="toggle-row"><span class="toggle-label">Flood Overlay</span><button class="toggle on" id="togFlood" onclick="toggleFloodLayer()"></button></div>
-      <div class="toggle-row"><span class="toggle-label">Labels</span><button class="toggle on" id="togLabels" onclick="toggleLabels()"></button></div>
-      <div class="pro-lock-overlay" id="proLockOverlay" onclick="showModal()">
-        <div class="lock-icon">🔒</div>
+    <div class="box lock-wrap">
+      <div class="box-title">◈ Display Options</div>
+      <div class="trow"><span class="trow-label">Satellite View</span><button class="tog" id="togSat" onclick="setStyle(this.classList.contains('on')?'street':'satellite')"></button></div>
+      <div class="trow"><span class="trow-label">3D Terrain</span><button class="tog on" id="tog3D" onclick="toggle3D()"></button></div>
+      <div class="trow"><span class="trow-label">Flood Overlay</span><button class="tog on" id="togFlood" onclick="toggleFlood()"></button></div>
+      <div class="trow"><span class="trow-label">Place Labels</span><button class="tog on" id="togLabels" onclick="toggleLabels()"></button></div>
+      <div class="lock-overlay" id="lockOverlay" onclick="openModal()">
+        <div style="font-size:1.1rem">🔒</div>
         <div class="lock-text">PRO FEATURE<br>Satellite Imagery<br>Unlock for $10</div>
       </div>
     </div>
 
-    <div class="ctrl-section">
-      <div class="sect-title">▣ Depth Legend</div>
-      <div class="legend">
-        <div class="legend-item"><div class="lc" style="background:#001830"></div>Abyss (&lt;-3000m)</div>
-        <div class="legend-item"><div class="lc" style="background:#003d6b"></div>Deep Ocean</div>
-        <div class="legend-item"><div class="lc" style="background:#0077b6"></div>Shallow Sea</div>
-        <div class="legend-item"><div class="lc" style="background:#90e0ef"></div>Continental Shelf</div>
-        <div class="legend-item"><div class="lc" style="background:#2d6a2d"></div>Lowland</div>
-        <div class="legend-item"><div class="lc" style="background:#4a8a3a"></div>Highland</div>
-        <div class="legend-item"><div class="lc" style="background:#ddeedd"></div>Peak / Snow</div>
+    <div class="box">
+      <div class="box-title">▣ Legend</div>
+      <div class="leg">
+        <div class="leg-row"><div class="leg-sw" style="background:#001830"></div>Abyss &lt;−3000m</div>
+        <div class="leg-row"><div class="leg-sw" style="background:#003d6b"></div>Deep Ocean</div>
+        <div class="leg-row"><div class="leg-sw" style="background:#0077b6"></div>Shallow Sea</div>
+        <div class="leg-row"><div class="leg-sw" style="background:#90e0ef"></div>Continental Shelf</div>
+        <div class="leg-row"><div class="leg-sw" style="background:#2d6a2d"></div>Lowland</div>
+        <div class="leg-row"><div class="leg-sw" style="background:#4a8a3a"></div>Highland</div>
+        <div class="leg-row"><div class="leg-sw" style="background:#ddeedd"></div>Peak / Snow</div>
       </div>
     </div>
 
   </div>
 
-  <!-- MAP -->
   <div class="map-wrap">
     <div id="map"></div>
 
-    <div class="click-popup" id="clickPopup">
-      <button class="popup-close" onclick="document.getElementById('clickPopup').classList.remove('show')">✕</button>
-      <div class="popup-label">Elevation at point</div>
-      <div class="popup-elev" id="popupElev">-- m</div>
-      <div class="popup-status" id="popupStatus"></div>
+    <div class="cpop" id="cpop">
+      <button class="cpop-x" onclick="document.getElementById('cpop').classList.remove('on')">✕</button>
+      <div class="cpop-lbl">Elevation at point</div>
+      <div class="cpop-elev" id="cpopElev">-- m</div>
+      <div class="cpop-status" id="cpopStatus"></div>
     </div>
 
-    <div class="flood-legend" id="floodLegend">
-      <div class="fl-title">Flood Depth</div>
-      <div class="fl-row"><div class="fl-sw" style="background:rgba(100,190,255,0.6)"></div>&lt; 10 m</div>
-      <div class="fl-row"><div class="fl-sw" style="background:rgba(40,130,255,0.72)"></div>10 – 100 m</div>
-      <div class="fl-row"><div class="fl-sw" style="background:rgba(0,50,190,0.88)"></div>&gt; 100 m</div>
+    <div class="fleg" id="fleg">
+      <div class="fleg-title">Flood Depth</div>
+      <div class="fleg-row"><div class="fleg-sw" style="background:rgba(100,190,255,.6)"></div>&lt; 10m</div>
+      <div class="fleg-row"><div class="fleg-sw" style="background:rgba(40,130,255,.72)"></div>10–100m</div>
+      <div class="fleg-row"><div class="fleg-sw" style="background:rgba(0,50,190,.88)"></div>&gt;100m</div>
     </div>
 
-    <div class="info-bar">
-      <div class="info-item">COORDS <span id="infoCoord">hover map</span></div>
-      <div class="info-item">ELEV <span id="infoElev">--</span></div>
-      <div class="info-item">FLOOD LEVEL <span id="infoFlood">+0 m</span></div>
-      <div class="info-item">MODEL <span id="modelLabel">MAPBOX TERRAIN DEM</span></div>
+    <div class="ibar">
+      <div>COORDS <span id="iCoord">hover map</span></div>
+      <div>ELEV <span id="iElev">--</span></div>
+      <div>FLOOD <span id="iFlood">+0 m</span></div>
+      <div style="margin-left:auto">Real elevation · Mapbox Terrain DEM</div>
     </div>
   </div>
 </div>
 
-<!-- Upgrade Modal -->
-<div class="modal-bg" id="modalBg">
-  <div class="modal">
-    <div class="modal-bar"></div>
-    <button class="modal-close" onclick="hideModal()">✕</button>
-    <div class="modal-inner">
-      <div class="modal-title">GEODEPTH PRO</div>
-      <div class="modal-sub">One-time unlock — yours forever on this device</div>
-      <ul class="feat-list">
+<!-- Modal -->
+<div class="mbg" id="mbg">
+  <div class="mbox">
+    <div class="mbar"></div>
+    <button class="mx" onclick="closeModal()">✕</button>
+    <div class="minner">
+      <div class="mtitle">GEODEPTH PRO</div>
+      <div class="msub">One-time unlock — yours forever on this device</div>
+      <ul class="mfeats">
         <li><span class="ck">✓</span> Satellite imagery base map</li>
-        <li><span class="ck">✓</span> Real flood overlay on satellite</li>
+        <li><span class="ck">✓</span> Flood overlay on satellite view</li>
         <li><span class="ck">✓</span> All free features included</li>
         <li><span class="ck">✓</span> All future map styles</li>
-        <li><span class="ck">✓</span> No subscription, no ads, ever</li>
+        <li><span class="ck">✓</span> No subscription ever</li>
       </ul>
-      <div class="price-row">
-        <div class="price-big">$10</div>
-        <div class="price-note">one-time<br>no subscription</div>
-      </div>
-      <button class="pay-btn" id="payBtn" onclick="startCheckout()">
+      <div class="mprice"><div class="mprice-big">$10</div><div class="mprice-note">one-time<br>no subscription</div></div>
+      <button class="paybtn" id="paybtn" onclick="startCheckout()">
         <span id="payTxt">Unlock Pro Now</span>
-        <span id="paySpin" style="display:none"><div class="spinner"></div></span>
+        <span id="paySpin" style="display:none"><div class="spin"></div></span>
       </button>
-      <div class="secure-note">🔒 Secure payment via Stripe · No account needed · Instant unlock</div>
+      <div class="msecure">🔒 Stripe · No account needed · Instant unlock</div>
     </div>
   </div>
 </div>
 
 <script>
-const MAPBOX_TOKEN='pk.eyJ1IjoiZ3JpbWVyaWNhIiwiYSI6ImNtbWZkdnp3bjA2OXcyd29weGozZXk1cXcifQ.O-Lqryp3ScXYbw0svGwwOw';
-mapboxgl.accessToken=MAPBOX_TOKEN;
+// ── Config ─────────────────────────────────────────────────────────────────────
+const MB = 'pk.eyJ1IjoiZ3JpbWVyaWNhIiwiYSI6ImNtbWZkdnp3bjA2OXcyd29weGozZXk1cXcifQ.O-Lqryp3ScXYbw0svGwwOw';
+mapboxgl.accessToken = MB;
 
 // ── State ──────────────────────────────────────────────────────────────────────
-let seaLevel=0, spinFactor=1.0, gravStrength=0, gravRadius=500;
-let gravLng=null, gravLat=null;
-let isPro=false, currentStyle='street';
-let floodVisible=true, terrainOn=true, labelsOn=true;
-let gravMarker=null;
+let SL = 0, spin = 1.0, grav = 0, gravRad = 500;
+let gravLng = null, gravLat = null, gravMarker = null;
+let isPro = false, mapStyle = 'street';
+let showFlood = true, show3D = true, showLabels = true;
+let mapReady = false;
 
-function getDeviceId(){let id=localStorage.getItem('gd_dev');if(!id){id='gd_'+Math.random().toString(36).substr(2,9)+Date.now().toString(36);localStorage.setItem('gd_dev',id);}return id;}
-const DEVICE_ID=getDeviceId();
+function devId() {
+  let id = localStorage.getItem('gd');
+  if (!id) { id = 'gd_' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('gd', id); }
+  return id;
+}
+const DID = devId();
 
 // ── Map ────────────────────────────────────────────────────────────────────────
-const map=new mapboxgl.Map({
-  container:'map',
-  style:'mapbox://styles/mapbox/outdoors-v12',
-  center:[0,25], zoom:2.5,
-  projection:'mercator',
-  hash:true
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/outdoors-v12',
+  center: [0, 25], zoom: 2.5,
+  projection: 'mercator'
 });
-map.addControl(new mapboxgl.NavigationControl(),'top-right');
-map.addControl(new mapboxgl.GeolocateControl({positionOptions:{enableHighAccuracy:true},trackUserLocation:false}),'top-right');
-map.addControl(new mapboxgl.ScaleControl({unit:'metric'}),'bottom-left');
+map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
-map.on('load',()=>{
-  setupTerrain();
-  setupFloodLayer();
+map.on('load', () => {
+  mapReady = true;
+  addDEM();
+  addFloodLayer();
 });
 
-function setupTerrain(){
-  if(!map.getSource('mapbox-dem')){
-    map.addSource('mapbox-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512,maxzoom:14});
+function addDEM() {
+  if (!map.getSource('dem')) {
+    map.addSource('dem', { type:'raster-dem', url:'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize:512, maxzoom:14 });
   }
-  if(terrainOn) map.setTerrain({source:'mapbox-dem',exaggeration:1});
+  map.setTerrain(show3D ? { source:'dem', exaggeration:1 } : null);
 }
 
-// ── Flood layer using raster-color on terrain DEM ─────────────────────────────
-function setupFloodLayer(){
-  if(!map.getSource('flood-dem')){
-    map.addSource('flood-dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:256,maxzoom:14});
+// ── Flood layer ────────────────────────────────────────────────────────────────
+// Uses raster-color expression on the terrain DEM to paint flooded areas blue
+function addFloodLayer() {
+  if (!map.getSource('fdem')) {
+    map.addSource('fdem', { type:'raster-dem', url:'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize:256, maxzoom:14 });
   }
-  if(!map.getLayer('flood-layer')){
-    map.addLayer({
-      id:'flood-layer',
-      type:'raster',
-      source:'flood-dem',
-      paint:{
-        'raster-opacity': floodVisible ? 0.78 : 0,
-        'raster-resampling':'linear',
-        'raster-color': floodRamp(seaLevel),
-        'raster-color-range':[-500,9000]
-      }
-    }, getFirstSymbolLayer());
-  }
-  updateFlood();
+  if (map.getLayer('flood')) map.removeLayer('flood');
+
+  // Find first label layer to insert flood below labels
+  let firstLabel;
+  for (const l of map.getStyle().layers) { if (l.type === 'symbol') { firstLabel = l.id; break; } }
+
+  map.addLayer({
+    id: 'flood',
+    type: 'raster',
+    source: 'fdem',
+    paint: {
+      'raster-opacity': showFlood ? 0.75 : 0,
+      'raster-resampling': 'linear',
+      'raster-color': makeRamp(SL),
+      'raster-color-range': [-500, 9000]
+    }
+  }, firstLabel);
 }
 
-function getFirstSymbolLayer(){
-  const layers=map.getStyle().layers;
-  for(const l of layers){if(l.type==='symbol')return l.id;}
-  return undefined;
-}
-
-function floodRamp(sl){
-  // Spin effect: faster spin = water rises at equator (we approximate by adjusting effective sea level at lat)
-  // For the raster layer we can only do a global offset — spin effect shown in click elevation popup
-  const spinOffset=(spinFactor-1)*2000; // rough equatorial equivalent
-  const gravOffset=gravStrength*3; // rough global lift when anomaly active
-  const effectiveSL=sl+spinOffset*0.3+gravOffset*0.1;
-
-  return[
-    'interpolate',['linear'],['raster-value'],
-    -500,'rgba(0,15,100,0.92)',
-    -200,'rgba(0,35,150,0.88)',
-    -50, 'rgba(0,65,180,0.82)',
-    -5,  'rgba(10,100,210,0.76)',
-    Math.max(effectiveSL-1,-500),'rgba(40,160,255,0.68)',
-    effectiveSL,                  'rgba(80,200,255,0.62)',
-    effectiveSL+0.01,             'rgba(0,0,0,0)',
-    9000,                         'rgba(0,0,0,0)'
+function makeRamp(sl) {
+  // raster-value = elevation in metres from the DEM
+  // pixels BELOW sl = blue (flood), pixels ABOVE sl = transparent
+  const eSL = Math.min(sl, 8900);
+  return [
+    'interpolate', ['linear'], ['raster-value'],
+    -500,       'rgba(0,15,110,0.92)',
+    -200,       'rgba(0,40,160,0.88)',
+    -50,        'rgba(0,70,190,0.82)',
+    -2,         'rgba(10,110,215,0.76)',
+    eSL - 0.5,  'rgba(50,170,255,0.68)',
+    eSL,        'rgba(90,205,255,0.62)',
+    eSL + 0.1,  'rgba(0,0,0,0)',
+    9000,       'rgba(0,0,0,0)'
   ];
 }
 
-function updateFlood(){
-  if(!map.getLayer('flood-layer'))return;
-  map.setPaintProperty('flood-layer','raster-color',floodRamp(seaLevel));
-  map.setPaintProperty('flood-layer','raster-opacity',floodVisible?0.78:0);
-  document.getElementById('floodLegend').classList.toggle('show',seaLevel>0&&floodVisible);
-
-  // Update info bar flood level
-  const el=document.getElementById('infoFlood');
-  el.textContent=(seaLevel>=0?'+':'')+seaLevel+' m';
-  el.style.color=seaLevel>0?'#4da6ff':seaLevel<0?'#ff9944':'var(--accent)';
-
-  // Header
-  const hsl=document.getElementById('hSL');
-  hsl.textContent=(seaLevel>=0?'+':'')+seaLevel+' m';
-  hsl.className='hstat-value'+(Math.abs(seaLevel)>500?' hot':Math.abs(seaLevel)>100?' warn':'');
+function applyFlood() {
+  if (!mapReady || !map.getLayer('flood')) return;
+  map.setPaintProperty('flood', 'raster-color', makeRamp(SL));
+  map.setPaintProperty('flood', 'raster-opacity', showFlood ? 0.75 : 0);
+  // legend
+  document.getElementById('fleg').classList.toggle('on', SL > 0 && showFlood);
+  // info bar
+  const el = document.getElementById('iFlood');
+  el.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
+  el.style.color = SL > 0 ? '#4da6ff' : SL < 0 ? '#ff9944' : 'var(--cyan)';
+  // header
+  const h = document.getElementById('hSL');
+  h.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
+  h.className = 'hs-v' + (Math.abs(SL) > 500 ? ' h' : Math.abs(SL) > 100 ? ' w' : '');
 }
 
-// ── Controls ───────────────────────────────────────────────────────────────────
-function onSeaSlider(){
-  seaLevel=parseInt(document.getElementById('seaSlider').value);
-  const el=document.getElementById('slVal');
-  el.textContent=(seaLevel>=0?'+':'')+seaLevel+' m';
-  el.className='sl-val'+(seaLevel>0?' flood':seaLevel<0?' drain':'');
-  updateFlood();
+// ── Slider ─────────────────────────────────────────────────────────────────────
+document.getElementById('slRange').addEventListener('input', function() {
+  SL = parseInt(this.value);
+  const el = document.getElementById('slVal');
+  el.textContent = (SL >= 0 ? '+' : '') + SL + ' m';
+  el.className = 'row-val' + (SL > 0 ? ' flood' : SL < 0 ? ' drain' : '');
+  applyFlood();
+});
+
+// ── Presets ────────────────────────────────────────────────────────────────────
+function preset(val, id) {
+  SL = val;
+  document.getElementById('slRange').value = val;
+  const el = document.getElementById('slVal');
+  el.textContent = (val >= 0 ? '+' : '') + val + ' m';
+  el.className = 'row-val' + (val > 0 ? ' flood' : val < 0 ? ' drain' : '');
+  document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  applyFlood();
 }
 
-function setPreset(val,btn){
-  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  seaLevel=val;
-  document.getElementById('seaSlider').value=val;
-  const el=document.getElementById('slVal');
-  el.textContent=(val>=0?'+':'')+val+' m';
-  el.className='sl-val'+(val>0?' flood':val<0?' drain':'');
-  updateFlood();
-}
+// ── Spin ───────────────────────────────────────────────────────────────────────
+document.getElementById('spinRange').addEventListener('input', function() {
+  spin = parseFloat(this.value);
+  document.getElementById('spinVal').textContent = spin.toFixed(2) + '×';
+  const h = document.getElementById('hSpin');
+  h.textContent = spin.toFixed(2) + '×';
+  h.className = 'hs-v' + (Math.abs(spin - 1) > 0.5 ? ' w' : '');
+  // Spin shifts effective sea level — reapply with offset
+  const spinSL = SL + (spin - 1) * 600;
+  if (mapReady && map.getLayer('flood')) {
+    map.setPaintProperty('flood', 'raster-color', makeRamp(spinSL));
+  }
+});
 
-function onSpin(){
-  spinFactor=parseFloat(document.getElementById('spinSlider').value);
-  document.getElementById('spinVal').textContent=spinFactor.toFixed(2)+'×';
-  document.getElementById('hSpin').textContent=spinFactor.toFixed(2)+'×';
-  document.getElementById('hSpin').className='hstat-value'+(Math.abs(spinFactor-1)>.5?' warn':'');
-  updateFlood();
-}
-
-function onGrav(){
-  gravStrength=parseInt(document.getElementById('gravSlider').value);
-  document.getElementById('gravVal').textContent=gravStrength+'%';
-  document.getElementById('hGrav').textContent=gravStrength>0?gravStrength+'%':'NONE';
-  document.getElementById('hGrav').className='hstat-value'+(gravStrength>0?' hot':'');
-  updateFlood();
+// ── Gravity ────────────────────────────────────────────────────────────────────
+document.getElementById('gravRange').addEventListener('input', function() {
+  grav = parseInt(this.value);
+  document.getElementById('gravVal').textContent = grav + '%';
+  const h = document.getElementById('hGrav');
+  h.textContent = grav > 0 ? grav + '%' : 'OFF';
+  h.className = 'hs-v' + (grav > 0 ? ' h' : '');
   updateGravMarker();
-}
+});
 
-function onGravRad(){
-  gravRadius=parseInt(document.getElementById('gravRadSlider').value);
-  document.getElementById('gravRadVal').textContent=gravRadius+' km';
+document.getElementById('gravRadRange').addEventListener('input', function() {
+  gravRad = parseInt(this.value);
+  document.getElementById('gravRadVal').textContent = gravRad + ' km';
   updateGravMarker();
+});
+
+function clearGrav() {
+  grav = 0; gravLng = null; gravLat = null;
+  document.getElementById('gravRange').value = 0;
+  document.getElementById('gravVal').textContent = '0%';
+  document.getElementById('hGrav').textContent = 'OFF';
+  document.getElementById('hGrav').className = 'hs-v';
+  if (gravMarker) { gravMarker.remove(); gravMarker = null; }
 }
 
-function clearGravity(){
-  gravLng=null;gravLat=null;gravStrength=0;
-  document.getElementById('gravSlider').value=0;
-  document.getElementById('gravVal').textContent='0%';
-  document.getElementById('hGrav').textContent='NONE';
-  document.getElementById('hGrav').className='hstat-value';
-  if(gravMarker){gravMarker.remove();gravMarker=null;}
-  updateFlood();
+function updateGravMarker() {
+  if (gravMarker) { gravMarker.remove(); gravMarker = null; }
+  if (gravLng === null || grav === 0) return;
+  const sz = Math.max(24, gravRad / 30);
+  const el = document.createElement('div');
+  el.style.cssText = `width:${sz}px;height:${sz}px;border-radius:50%;border:2px solid rgba(255,107,53,0.85);box-shadow:0 0 18px rgba(255,107,53,0.45);background:rgba(255,107,53,0.08);pointer-events:none;`;
+  gravMarker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([gravLng, gravLat]).addTo(map);
 }
 
-function updateGravMarker(){
-  if(gravLng===null||gravStrength===0){if(gravMarker){gravMarker.remove();gravMarker=null;}return;}
-  const el=document.createElement('div');
-  el.style.cssText=`width:${Math.max(20,gravRadius/40)}px;height:${Math.max(20,gravRadius/40)}px;border-radius:50%;border:2px solid rgba(255,107,53,0.8);box-shadow:0 0 20px rgba(255,107,53,0.4);background:rgba(255,107,53,0.1);pointer-events:none;`;
-  if(gravMarker)gravMarker.remove();
-  gravMarker=new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([gravLng,gravLat]).addTo(map);
+// ── Toggles ────────────────────────────────────────────────────────────────────
+function toggle3D() {
+  show3D = !show3D;
+  document.getElementById('tog3D').classList.toggle('on', show3D);
+  if (!mapReady) return;
+  map.setTerrain(show3D ? { source:'dem', exaggeration:1 } : null);
 }
 
-function toggle3D(){
-  terrainOn=!terrainOn;
-  document.getElementById('tog3D').classList.toggle('on',terrainOn);
-  if(terrainOn)map.setTerrain({source:'mapbox-dem',exaggeration:1});
-  else map.setTerrain(null);
+function toggleFlood() {
+  showFlood = !showFlood;
+  document.getElementById('togFlood').classList.toggle('on', showFlood);
+  applyFlood();
 }
 
-function toggleFloodLayer(){
-  floodVisible=!floodVisible;
-  document.getElementById('togFlood').classList.toggle('on',floodVisible);
-  updateFlood();
-}
-
-function toggleLabels(){
-  labelsOn=!labelsOn;
-  document.getElementById('togLabels').classList.toggle('on',labelsOn);
-  map.getStyle().layers.forEach(l=>{
-    if(l.type==='symbol')map.setLayoutProperty(l.id,'visibility',labelsOn?'visible':'none');
+function toggleLabels() {
+  showLabels = !showLabels;
+  document.getElementById('togLabels').classList.toggle('on', showLabels);
+  if (!mapReady) return;
+  map.getStyle().layers.forEach(l => {
+    if (l.type === 'symbol') map.setLayoutProperty(l.id, 'visibility', showLabels ? 'visible' : 'none');
   });
 }
 
 // ── Map style ──────────────────────────────────────────────────────────────────
-function setStyle(style){
-  if(style==='satellite'&&!isPro){showModal();return;}
-  currentStyle=style;
-  document.getElementById('btnStreet').classList.toggle('active',style==='street');
-  document.getElementById('btnSatellite').classList.toggle('active',style==='satellite');
-  document.getElementById('togSat').classList.toggle('on',style==='satellite');
-
-  const url=style==='satellite'
-    ?'mapbox://styles/mapbox/satellite-streets-v12'
-    :'mapbox://styles/mapbox/outdoors-v12';
-  map.setStyle(url);
-  map.once('style.load',()=>{setupTerrain();setupFloodLayer();});
+function setStyle(style) {
+  if (style === 'satellite' && !isPro) { openModal(); return; }
+  mapStyle = style;
+  const isSat = style === 'satellite';
+  document.getElementById('btnMap').classList.toggle('on', !isSat);
+  document.getElementById('btnSat').classList.toggle('on', isSat);
+  document.getElementById('togSat').classList.toggle('on', isSat);
+  map.setStyle(isSat ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/outdoors-v12');
+  map.once('style.load', () => { addDEM(); addFloodLayer(); });
 }
 
-// ── Click for elevation ────────────────────────────────────────────────────────
-map.on('click',(e)=>{
-  const elev=map.queryTerrainElevation(e.lngLat,{exaggerated:false});
-  const popup=document.getElementById('clickPopup');
-  popup.classList.add('show');
-  if(elev!==null){
-    // Apply spin effect at this latitude
-    const lat=e.lngLat.lat*Math.PI/180;
-    const spinDelta=(spinFactor-1)*8000*Math.cos(lat)**2;
-    const effectiveSL=seaLevel+spinDelta*0.1;
-
-    document.getElementById('popupElev').textContent=elev.toFixed(1)+' m';
-    const status=document.getElementById('popupStatus');
-    if(elev<effectiveSL){
-      status.className='popup-status flooded';
-      status.textContent='💧 Flooded — '+(effectiveSL-elev).toFixed(0)+'m underwater';
-    } else {
-      status.className='popup-status safe';
-      status.textContent='✓ Safe — '+(elev-effectiveSL).toFixed(0)+'m above water';
-    }
+// ── Click elevation ────────────────────────────────────────────────────────────
+map.on('click', e => {
+  const elev = map.queryTerrainElevation(e.lngLat, { exaggerated: false });
+  document.getElementById('cpop').classList.add('on');
+  if (elev !== null) {
+    document.getElementById('cpopElev').textContent = elev.toFixed(1) + ' m';
+    const lat = e.lngLat.lat * Math.PI / 180;
+    const spinOffset = (spin - 1) * 8000 * Math.pow(Math.cos(lat), 2) * 0.1;
+    const eff = SL + spinOffset + grav * 2;
+    const st = document.getElementById('cpopStatus');
+    if (elev < eff) { st.className = 'cpop-status flood'; st.textContent = '💧 Flooded · ' + (eff - elev).toFixed(0) + 'm deep'; }
+    else { st.className = 'cpop-status safe'; st.textContent = '✓ Safe · ' + (elev - eff).toFixed(0) + 'm clearance'; }
   } else {
-    document.getElementById('popupElev').textContent='No data';
-    document.getElementById('popupStatus').textContent='';
+    document.getElementById('cpopElev').textContent = 'No data';
+    document.getElementById('cpopStatus').textContent = '';
   }
-
-  // Place gravity anomaly on click if gravity is active
-  if(gravStrength>0){
-    gravLng=e.lngLat.lng;gravLat=e.lngLat.lat;
-    updateGravMarker();
-    updateFlood();
-  }
+  // Place gravity anomaly
+  if (grav > 0) { gravLng = e.lngLat.lng; gravLat = e.lngLat.lat; updateGravMarker(); }
 });
 
-// ── Cursor tracking ────────────────────────────────────────────────────────────
-map.on('mousemove',(e)=>{
-  document.getElementById('infoCoord').textContent=e.lngLat.lat.toFixed(4)+'°, '+e.lngLat.lng.toFixed(4)+'°';
-  const elev=map.queryTerrainElevation(e.lngLat,{exaggerated:false});
-  document.getElementById('infoElev').textContent=elev!==null?elev.toFixed(0)+' m':'--';
+// ── Cursor ─────────────────────────────────────────────────────────────────────
+map.on('mousemove', e => {
+  document.getElementById('iCoord').textContent = e.lngLat.lat.toFixed(4) + '°, ' + e.lngLat.lng.toFixed(4) + '°';
+  const elev = map.queryTerrainElevation(e.lngLat, { exaggerated: false });
+  document.getElementById('iElev').textContent = elev !== null ? elev.toFixed(0) + ' m' : '--';
 });
 
 // ── Search ─────────────────────────────────────────────────────────────────────
-let searchTimer;
-document.getElementById('searchInput').addEventListener('input',e=>{
-  clearTimeout(searchTimer);
-  const q=e.target.value.trim();
-  if(q.length<3){document.getElementById('searchResults').style.display='none';return;}
-  searchTimer=setTimeout(()=>doSearch(q),400);
+let stimer;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(stimer);
+  const q = e.target.value.trim();
+  if (q.length < 3) { document.getElementById('searchDrop').style.display = 'none'; return; }
+  stimer = setTimeout(async () => {
+    try {
+      const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${MB}&limit=5`);
+      const d = await r.json();
+      const box = document.getElementById('searchDrop');
+      if (!d.features?.length) { box.style.display = 'none'; return; }
+      box.innerHTML = d.features.map(f => `<div class="sd-item" onclick="flyTo(${f.center[0]},${f.center[1]},'${f.place_name.replace(/'/g, "\\'")}')">${f.place_name}</div>`).join('');
+      box.style.display = 'block';
+    } catch(e) {}
+  }, 380);
 });
-async function doSearch(q){
-  try{
-    const r=await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${MAPBOX_TOKEN}&limit=5`);
-    const d=await r.json();
-    const box=document.getElementById('searchResults');
-    if(!d.features?.length){box.style.display='none';return;}
-    box.innerHTML=d.features.map(f=>`<div class="search-result" onclick="flyTo(${f.center[0]},${f.center[1]},'${f.place_name.replace(/'/g,"\\'")}')">${f.place_name}</div>`).join('');
-    box.style.display='block';
-  }catch(e){}
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) document.getElementById('searchDrop').style.display = 'none'; });
+function flyTo(lng, lat, name) {
+  map.flyTo({ center:[lng,lat], zoom:8, duration:1400 });
+  document.getElementById('searchInput').value = name;
+  document.getElementById('searchDrop').style.display = 'none';
 }
-function flyTo(lng,lat,name){
-  map.flyTo({center:[lng,lat],zoom:8,duration:1500});
-  document.getElementById('searchInput').value=name;
-  document.getElementById('searchResults').style.display='none';
-}
-document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))document.getElementById('searchResults').style.display='none';});
 
 // ── Pro / Stripe ───────────────────────────────────────────────────────────────
-async function checkPro(){
-  if(localStorage.getItem('gd_pro')==='true'){activatePro(false);return;}
-  try{
-    const r=await fetch('/api/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({deviceId:DEVICE_ID})});
-    const d=await r.json();
-    if(d.pro)activatePro(true);
-  }catch(e){}
+async function checkPro() {
+  if (localStorage.getItem('gd_pro') === '1') { activatePro(false); return; }
+  try {
+    const r = await fetch('/api/status', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({deviceId:DID}) });
+    const d = await r.json();
+    if (d.pro) activatePro(true);
+  } catch(e) {}
 }
-function activatePro(save=true){
-  isPro=true;
-  if(save)localStorage.setItem('gd_pro','true');
+function activatePro(save=true) {
+  isPro = true;
+  if (save) localStorage.setItem('gd_pro', '1');
   document.getElementById('proBadge').classList.add('on');
-  document.getElementById('upgradeBtn').style.display='none';
-  document.getElementById('btnSatellite').classList.remove('locked');
-  document.getElementById('proLockOverlay').style.display='none';
+  document.getElementById('ubtn').style.display = 'none';
+  document.getElementById('btnSat').classList.remove('gold');
+  document.getElementById('lockOverlay').style.display = 'none';
 }
-async function handleReturn(){
-  const p=new URLSearchParams(window.location.search);
-  if(p.get('pro')==='success'){
-    try{
-      const r=await fetch('/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:p.get('session_id'),deviceId:p.get('device')||DEVICE_ID})});
-      const d=await r.json();
-      if(d.success)activatePro(true);
-    }catch(e){activatePro(true);}
-    window.history.replaceState({},'','/');
+async function handleReturn() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('pro') === 'success') {
+    try {
+      const r = await fetch('/api/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId:p.get('session_id'), deviceId:p.get('device')||DID}) });
+      const d = await r.json();
+      if (d.success) activatePro(true);
+    } catch(e) { activatePro(true); }
+    window.history.replaceState({}, '', '/');
   }
 }
-async function startCheckout(){
-  document.getElementById('payTxt').style.display='none';
-  document.getElementById('paySpin').style.display='inline-block';
-  document.getElementById('payBtn').disabled=true;
-  try{
-    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({deviceId:DEVICE_ID})});
-    const d=await r.json();
-    if(d.url)window.location.href=d.url;
-    else throw new Error(d.error||'Unknown error');
-  }catch(err){
-    alert('Payment error: '+err.message);
-    document.getElementById('payTxt').style.display='inline';
-    document.getElementById('paySpin').style.display='none';
-    document.getElementById('payBtn').disabled=false;
+async function startCheckout() {
+  document.getElementById('payTxt').style.display = 'none';
+  document.getElementById('paySpin').style.display = 'inline-block';
+  document.getElementById('paybtn').disabled = true;
+  try {
+    const r = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({deviceId:DID}) });
+    const d = await r.json();
+    if (d.url) window.location.href = d.url;
+    else throw new Error(d.error || 'Error');
+  } catch(err) {
+    alert('Payment error: ' + err.message);
+    document.getElementById('payTxt').style.display = 'inline';
+    document.getElementById('paySpin').style.display = 'none';
+    document.getElementById('paybtn').disabled = false;
   }
 }
-function showModal(){document.getElementById('modalBg').classList.add('on');}
-function hideModal(){document.getElementById('modalBg').classList.remove('on');}
-document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===document.getElementById('modalBg'))hideModal();});
+function openModal() { document.getElementById('mbg').classList.add('on'); }
+function closeModal() { document.getElementById('mbg').classList.remove('on'); }
+document.getElementById('mbg').addEventListener('click', e => { if (e.target === document.getElementById('mbg')) closeModal(); });
 
 checkPro();
 handleReturn();
