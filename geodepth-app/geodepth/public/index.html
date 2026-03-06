@@ -252,7 +252,8 @@ const map = new mapboxgl.Map({
   style: 'mapbox://styles/mapbox/outdoors-v12',
   center: [0, 25],
   zoom: 2.5,
-  hash: true
+  hash: true,
+  projection: 'mercator'
 });
 
 map.addControl(new mapboxgl.NavigationControl(), 'top-right');
